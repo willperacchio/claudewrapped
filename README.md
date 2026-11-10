@@ -18,13 +18,13 @@ That's it. In about 10 seconds you get a story-mode recap of your year with Clau
 - **Your top genre.** Your most-edited language, with an honorable mention if Markdown beat it (it usually does).
 - **The terminal.** Your most-run commands, plus the `rm -rf` and `git push --force` counters.
 - **Lines of code.** What Claude wrote for you, measured against the Linux kernel.
-- **Token economics.** Tokens read and written, in Moby-Dicks, and what it would cost at API prices.
+- **Token economics.** A receipt for your year: tokens read and written, in Moby-Dicks, and the total at API prices.
 - **Claude's catchphrase.** How many times Claude said *"You're absolutely right!"* (or, on newer models, how many em dashes it used instead).
 - **The vibe check.** Your please and thank-you count vs. your wtf count. Are you on the good list?
 - **Greatest hits.** Your most-said word, Esc presses, "continue"s, and your longest prompt.
 - **Showing up.** A heatmap calendar, your longest streak, and your busiest day.
-- **Your Claude personality.** One of 16 archetypes: The Night Shift 🌙, The Rubber Stamp ✅, The Esc Artist ⌨️, The Octopus 🐙…
-- **A share card.** A 1080×1350 PNG made for X, Instagram and LinkedIn. Save it, copy it, or open a prefilled post.
+- **Your Claude personality.** One of 16 archetypes, each with its own drawn mark and colors: The Night Shift, The Rubber Stamp, The Esc Artist, The Octopus…
+- **A share card.** A 1080×1350 poster made for X, Instagram and LinkedIn, in six colorways. Save it, copy it, or open a prefilled post.
 
 ## Privacy, specifically
 

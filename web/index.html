@@ -8,212 +8,275 @@
 <meta name="description" content="Your year in Claude Code, Spotify Wrapped style. Computed 100% locally.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎁</text></svg>">
 <style>
+/* Art direction: printed matter. Two inks per slide on a paper tone, visible grain,
+   a heavy grotesque for numbers, an italic serif for the voice, mono for metadata. */
 :root{
-  --plum:#1A0B2E;--lime:#CCFF3D;--pink:#FF5FA2;--violet:#6B4EFF;--cobalt:#1F3BFF;--mint:#3DF5C0;
-  --sun:#FFC93D;--tomato:#FF4D2E;--clay:#D97757;--cream:#F4EFE6;--ink:#0B0B0F;--white:#FFF8EE;
-  --display:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI Variable Display","Segoe UI",Inter,Roboto,"Helvetica Neue",Arial,sans-serif;
+  --paper:#F2EDE4;--ink:#15120F;--plum:#1B1024;--lime:#D2FF3A;--clay:#D9623B;--cobalt:#2742F5;
+  --pink:#FF8DB5;--butter:#F7D046;--forest:#0D3B2E;--lilac:#BDAEFF;
+  --sans:system-ui,-apple-system,"Segoe UI Variable Display","Segoe UI",Inter,Roboto,"Helvetica Neue",Arial,sans-serif;
+  --serif:ui-serif,"New York","Iowan Old Style",Charter,"Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
   --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
-  --g1:var(--plum);--g2:var(--lime);
+  --out:cubic-bezier(.16,1,.3,1);--inout:cubic-bezier(.65,0,.35,1);
+  --g1:var(--lime);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
-body{background:#07060B;color:var(--cream);font-family:var(--display);-webkit-font-smoothing:antialiased;overflow:hidden;
-  -webkit-tap-highlight-color:transparent}
-#glow{position:fixed;inset:-10%;pointer-events:none;opacity:.42;filter:blur(50px);
-  background:radial-gradient(45vmax 45vmax at 18% 22%,var(--g1),transparent 70%),radial-gradient(45vmax 45vmax at 82% 78%,var(--g2),transparent 70%)}
-#stage{position:fixed;inset:0;display:grid;place-items:center}
-#story{--bg:var(--plum);--fg:var(--cream);--a1:var(--lime);--a2:var(--pink);
-  position:relative;width:min(100vw,calc((100dvh - 48px) * 9 / 16),540px);aspect-ratio:9/16;border-radius:28px;overflow:hidden;
+body{background:#0B0A0C;color:var(--paper);font-family:var(--sans);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+  overflow:hidden;-webkit-tap-highlight-color:transparent}
+#glow{position:fixed;inset:0;pointer-events:none;opacity:.16;filter:blur(80px);
+  background:radial-gradient(38vmax 38vmax at 50% 50%,var(--g1),transparent 70%)}
+#stage{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+#keys{font:500 10.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:#6b666e}
+#story{--bg:var(--plum);--fg:var(--paper);--a1:var(--lime);
+  position:relative;width:min(100vw,calc((100dvh - 86px) * 9 / 16),520px);aspect-ratio:9/16;border-radius:22px;overflow:hidden;isolation:isolate;
   background:var(--bg);color:var(--fg);container-type:inline-size;font-size:4cqw;
-  box-shadow:0 40px 140px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.06);transition:background-color .45s,color .45s;
+  box-shadow:0 40px 120px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.07);transition:background-color .5s,color .5s;
   user-select:none;-webkit-user-select:none;touch-action:manipulation;cursor:pointer}
-@media (max-width:560px){#story{width:100vw;height:100dvh;aspect-ratio:auto;border-radius:0}}
+/* paper grain: a dark speckle and a light speckle, so it reads on any ink */
+#story::after{content:"";position:absolute;inset:0;z-index:15;pointer-events:none;opacity:.3;background-size:240px 240px;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.5 0 0 0 -.6'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' seed='11' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 1.5 0 0 -.64'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E")}
+@media (max-width:560px){#story{width:100vw;height:100dvh;aspect-ratio:auto;border-radius:0}#keys{display:none}}
+@media (max-height:640px){#keys{display:none}}
 
 /* chrome */
-.bars{position:absolute;top:3.4cqw;left:4cqw;right:4cqw;display:flex;gap:1.1cqw;z-index:20}
-.bar{flex:1;height:.75cqw;min-height:3px;border-radius:9px;background:color-mix(in srgb,var(--fg) 26%,transparent);overflow:hidden}
+.bars{position:absolute;top:3.4cqw;left:4.6cqw;right:4.6cqw;display:flex;gap:1cqw;z-index:20}
+.bar{flex:1;height:.5cqw;min-height:2px;border-radius:9px;background:color-mix(in srgb,var(--fg) 24%,transparent);overflow:hidden}
 .bar>i{display:block;height:100%;width:0;background:var(--fg)}
-.top{position:absolute;top:6.4cqw;left:4.2cqw;right:3cqw;display:flex;align-items:center;gap:2cqw;z-index:20;
-  font:800 2.9cqw/1 var(--mono);letter-spacing:.14em;text-transform:uppercase}
-.top .demo{background:var(--fg);color:var(--bg);padding:.9cqw 1.8cqw;border-radius:99px;letter-spacing:.08em}
+.top{position:absolute;top:5.8cqw;left:4.8cqw;right:2.6cqw;display:flex;align-items:center;gap:2.4cqw;z-index:20}
+.brand{font:700 3.3cqw/1 var(--sans);letter-spacing:-.015em}
+.brand i{font:italic 400 3.6cqw/1 var(--serif);margin-left:.9cqw;opacity:.85}
+.top .demo{font:600 2.2cqw/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;padding:1cqw 1.8cqw;border-radius:99px;box-shadow:inset 0 0 0 .3cqw currentColor}
 .top .sp{flex:1}
 .ibtn{appearance:none;border:0;background:transparent;color:inherit;width:9cqw;height:9cqw;display:grid;place-items:center;cursor:pointer;border-radius:50%}
-.ibtn svg{width:4.2cqw;height:4.2cqw}
-.ibtn:focus-visible,.btn:focus-visible,.cta:focus-visible{outline:3px solid var(--a1);outline-offset:3px}
+.ibtn svg{width:3.8cqw;height:3.8cqw}
+.ibtn:focus-visible,.btn:focus-visible,.cta:focus-visible,.way:focus-visible{outline:2px solid var(--a1);outline-offset:3px}
+.folio{position:absolute;left:7cqw;right:7cqw;bottom:4.8cqw;display:flex;justify-content:space-between;z-index:14;
+  font:600 2.35cqw/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;opacity:.62}
 
-/* slides */
-.slide{position:absolute;inset:0;display:flex;flex-direction:column;padding:18cqw 7cqw 9cqw;animation:slideIn .5s cubic-bezier(.2,.8,.2,1)}
-@keyframes slideIn{from{opacity:0;transform:scale(1.035)}}
+/* slide scaffold */
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;padding:19cqw 7cqw 13cqw;animation:slideIn .5s ease-out}
+@keyframes slideIn{from{opacity:0}}
 .deco{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:0}
-.content{position:relative;z-index:2;display:flex;flex-direction:column;gap:2.8cqw;flex:1;min-height:0}
-.content.center{justify-content:center}
-.content.mid{justify-content:center}
+.content{position:relative;z-index:2;display:flex;flex-direction:column;gap:2.6cqw;flex:1;min-height:0}
 .spacer{flex:1}
 
-.kicker{font:800 3cqw/1.25 var(--mono);letter-spacing:.15em;text-transform:uppercase}
-.lead{font-weight:750;font-size:6cqw;line-height:1.08;letter-spacing:-.025em}
-.mega{font-weight:900;font-size:25cqw;line-height:.84;letter-spacing:-.06em;font-variant-numeric:tabular-nums;white-space:nowrap}
-.h1{font-weight:900;font-size:13.5cqw;line-height:.88;letter-spacing:-.05em}
-.h2{font-weight:850;font-size:8.4cqw;line-height:.95;letter-spacing:-.04em}
-.quip{font-weight:650;font-size:4.5cqw;line-height:1.28;letter-spacing:-.01em;text-wrap:pretty}
-.quip b{font-weight:850}
-.fine{font:600 2.65cqw/1.45 var(--mono);opacity:.72;letter-spacing:.01em}
-.a1{color:var(--a1)}.a2{color:var(--a2)}
-.chips{display:flex;flex-wrap:wrap;gap:1.8cqw}
-.chip{display:inline-flex;align-items:center;gap:1.2cqw;padding:1.7cqw 3.2cqw;border-radius:99px;background:var(--fg);color:var(--bg);
-  font-weight:800;font-size:3.5cqw;white-space:nowrap}
-.chip.ghost{background:transparent;color:var(--fg);box-shadow:inset 0 0 0 .55cqw var(--fg)}
+/* type */
+.label{font:600 2.7cqw/1.4 var(--mono);letter-spacing:.15em;text-transform:uppercase}
+.num{font-weight:900;font-size:27cqw;line-height:.86;letter-spacing:-.065em;font-variant-numeric:tabular-nums}
+.head{font-weight:900;font-size:13cqw;line-height:.92;letter-spacing:-.052em}
+.sub{font-weight:800;font-size:7.4cqw;line-height:1;letter-spacing:-.042em}
+.voice{font-family:var(--serif);font-style:italic;font-weight:400;font-size:5.4cqw;line-height:1.24;letter-spacing:-.012em;text-wrap:pretty}
+.voice b{font-weight:700}
+.voice.big{font-size:6.8cqw;line-height:1.14;letter-spacing:-.02em}
+.fine{font:500 2.45cqw/1.55 var(--mono);opacity:.7;letter-spacing:.01em}
+.a1{color:var(--a1)}
+.rule{border-top:.35cqw solid currentColor}
 
-/* motion */
-.rise{opacity:0;transform:translateY(5cqw);animation:rise .7s cubic-bezier(.2,.9,.2,1) forwards;animation-delay:var(--d,0s)}
-@keyframes rise{to{opacity:1;transform:none}}
-.pop{opacity:0;transform:scale(.55) rotate(-5deg);animation:pop .85s cubic-bezier(.2,1.5,.35,1) forwards;animation-delay:var(--d,0s)}
-@keyframes pop{to{opacity:1;transform:none}}
-.slam{opacity:0;animation:slam .7s cubic-bezier(.2,1.2,.3,1) forwards;animation-delay:var(--d,0s)}
-@keyframes slam{0%{opacity:0;transform:scale(2.4) rotate(4deg)}55%{opacity:1;transform:scale(.94)}100%{opacity:1;transform:none}}
-.wobble{animation:wobble 3.2s ease-in-out infinite}
-@keyframes wobble{50%{transform:rotate(-3deg) scale(1.03)}}
+/* motion: masks and wipes, one easing family */
+.rv{opacity:0;transform:translateY(3.2cqw);animation:rv .9s var(--out) forwards;animation-delay:var(--d,0s)}
+@keyframes rv{to{opacity:1;transform:none}}
+.mk{display:block;overflow:hidden;padding:.08em .08em .14em 0;margin:-.08em -.08em -.14em 0}
+.mk>span{display:block;width:max-content;white-space:nowrap;transform:translateY(120%);animation:up 1s var(--out) forwards;animation-delay:var(--d,0s)}
+@keyframes up{to{transform:none}}
+.title .mk,.say .mk{padding-bottom:.26em;margin-bottom:-.26em}
+.mk.word{padding-bottom:.26em;margin-bottom:-.1em} /* room for serif descenders */
+.wipe{clip-path:inset(0 100% 0 0);animation:wipe 1.1s var(--inout) forwards;animation-delay:var(--d,0s)}
+@keyframes wipe{to{clip-path:inset(0 0 0 0)}}
+.zoom{opacity:0;transform:scale(.88);animation:zoom 1s var(--out) forwards;animation-delay:var(--d,0s)}
+@keyframes zoom{to{opacity:1;transform:none}}
+@keyframes grow{from{transform:scaleX(0)}}
+@keyframes growY{from{transform:scaleY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
 #story.paused .slide *,#story.held .slide *{animation-play-state:paused!important}
 
-/* decorations */
-.orb{position:absolute;border-radius:50%;animation:drift 9s ease-in-out infinite alternate}
-@keyframes drift{to{transform:translate(var(--dx,6cqw),var(--dy,-5cqw)) scale(1.12)}}
-.burst{position:absolute;animation:spin 40s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.ring{position:absolute;border-radius:50%;animation:breathe 5s ease-in-out infinite}
-@keyframes breathe{50%{transform:scale(1.08)}}
-.marquee{position:absolute;left:-25%;width:150%;transform:rotate(var(--rot,-8deg));overflow:hidden;white-space:nowrap;
-  font-weight:900;font-size:7cqw;letter-spacing:-.02em;padding:1.6cqw 0;line-height:1}
-.marquee div{display:inline-block;animation:marq 14s linear infinite}
-@keyframes marq{to{transform:translateX(-50%)}}
-.dots{position:absolute;inset:0;background-image:radial-gradient(color-mix(in srgb,var(--a1) 40%,transparent) 1.1px,transparent 1.4px);background-size:5cqw 5cqw;opacity:.35}
-.codelines{position:absolute;right:-14%;top:9%;width:62%;display:flex;flex-direction:column;gap:2.5cqw;transform:rotate(-12deg)}
-.codelines i{display:block;height:3.1cqw;border-radius:9px;animation:slideL 1s cubic-bezier(.2,.9,.2,1) both}
-@keyframes slideL{from{transform:translateX(70%);opacity:0}}
-.bigquote{position:absolute;font-weight:900;line-height:.7;font-size:95cqw;font-family:Georgia,"Times New Roman",serif}
-.confetti i{position:absolute;top:-6%;width:2.2cqw;height:3.8cqw;border-radius:2px;animation:fall linear infinite}
-@keyframes fall{to{transform:translate(var(--sx,0),205cqw) rotate(var(--r,720deg))}}
-.gradbg{position:absolute;inset:0;background-size:280% 280%;animation:hue 9s ease-in-out infinite alternate}
-@keyframes hue{0%{background-position:0% 30%}100%{background-position:100% 70%}}
+/* shared pieces */
+.meta{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;border-top:.35cqw solid currentColor;padding-top:2.6cqw}
+.meta div{padding-left:2.4cqw;border-left:.35cqw solid color-mix(in srgb,currentColor 28%,transparent)}
+.meta div:first-child{padding-left:0;border-left:0}
+.meta b{display:block;font-weight:900;font-size:7cqw;letter-spacing:-.045em;line-height:1}
+.meta span{display:block;font:600 2.2cqw/1.35 var(--mono);letter-spacing:.1em;text-transform:uppercase;margin-top:1cqw;opacity:.8}
+.tally{list-style:none}
+.tally li{display:flex;justify-content:space-between;align-items:baseline;gap:3cqw;border-top:.35cqw solid currentColor;padding:1.6cqw 0 1.9cqw;
+  font-weight:700;font-size:4.1cqw;letter-spacing:-.02em}
+.tally b{font:700 3.5cqw var(--mono);letter-spacing:0}
+.tally .th{font:600 2.5cqw var(--mono);letter-spacing:.15em;text-transform:uppercase;border-top:0;padding-top:0;opacity:.85}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:5cqw}
+.stamp{display:block;overflow:visible;flex:none}
+.stamp .rt{font:600 9.4px var(--mono);letter-spacing:.04em}
+.ringtext{transform-origin:100px 100px;animation:spin 60s linear infinite}
 
-/* intro */
-.title{position:relative;font-weight:900;font-size:21cqw;line-height:.82;letter-spacing:-.065em;margin:1cqw 0 2cqw}
-.title .w{color:var(--a1)}
-.yr{position:absolute;right:-1cqw;bottom:-8cqw;background:var(--a2);color:var(--ink);font-size:6.4cqw;letter-spacing:-.03em;padding:1.4cqw 3cqw;border-radius:99px;
-  transform:rotate(9deg);line-height:1;animation:wobble 3s ease-in-out infinite}
-.cta{appearance:none;border:0;cursor:pointer;background:var(--a1);color:var(--ink);font:900 5.4cqw/1 var(--display);letter-spacing:-.02em;
-  padding:4.2cqw 7.5cqw;border-radius:99px;align-self:flex-start;box-shadow:0 1.3cqw 0 #6f8c12;transition:transform .15s,box-shadow .15s}
-.cta:hover{transform:translateY(-2px) rotate(-1.5deg)}
-.cta:active{transform:translateY(1.1cqw);box-shadow:0 .2cqw 0 #6f8c12}
+/* 0 intro */
+.ghost{position:absolute;right:-3cqw;bottom:-9cqw;font-weight:900;font-size:86cqw;line-height:.8;letter-spacing:-.08em;color:#22132D}
+.introtop{display:flex;justify-content:space-between;align-items:flex-start}
+.st-yy{font:900 54px var(--sans);letter-spacing:-.06em;text-anchor:middle;fill:currentColor}
+.title{font-weight:900;font-size:22cqw;line-height:.86;letter-spacing:-.065em}
+.title em{font-family:var(--serif);font-style:italic;font-weight:400;font-size:1.1em;letter-spacing:-.045em;color:var(--a1)}
+.cta{appearance:none;border:0;cursor:pointer;background:var(--a1);color:var(--bg);font:800 4.6cqw/1 var(--sans);letter-spacing:-.02em;
+  padding:4cqw 6.4cqw;border-radius:99px;align-self:flex-start;display:inline-flex;gap:2cqw;align-items:center}
+.cta span{transition:transform .25s var(--out)}
+.cta:hover span{transform:translateX(1.2cqw)}
+.cta:active{filter:brightness(.92)}
 
-/* clock */
-.clock{width:74cqw;margin:0 auto;display:block;overflow:visible}
-.rbar{stroke:color-mix(in srgb,var(--fg) 45%,transparent);stroke-width:5.6;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;
-  animation:draw .65s cubic-bezier(.2,.9,.2,1) forwards;animation-delay:calc(var(--i) * 32ms + .35s)}
-.rbar.peak{stroke:var(--a1)}
+/* 1 minutes */
+.fig{display:grid;grid-template-columns:21cqw 1fr;gap:4cqw;align-items:center}
+.dial{width:21cqw;display:block}
+.dial .tick{stroke:currentColor;opacity:.45;stroke-width:1.1}
+.dial .trk{fill:none;stroke:currentColor;opacity:.14;stroke-width:7}
+.dial .arc{fill:none;stroke:currentColor;stroke-width:7;stroke-dasharray:var(--p) 100;stroke-dashoffset:var(--p);
+  transform:rotate(-90deg);transform-origin:50% 50%;animation:dash 1.4s var(--inout) .9s forwards}
+@keyframes dash{to{stroke-dashoffset:0}}
+.dial text{font:800 14px var(--sans);letter-spacing:-.04em;fill:currentColor;text-anchor:middle;dominant-baseline:central}
+
+/* 2 clock */
+.clock{width:94cqw;margin:-3cqw -4cqw -4cqw;display:block;overflow:visible}
+.rbar{stroke:var(--fg);opacity:.42;stroke-width:6.4;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;
+  animation:draw .7s var(--out) forwards;animation-delay:calc(var(--i) * 30ms + .35s)}
+.rbar.peak{stroke:var(--a1);opacity:1}
 @keyframes draw{to{stroke-dashoffset:0}}
-.clock text{font:800 9px var(--mono);fill:var(--fg);opacity:.7;text-anchor:middle;dominant-baseline:middle}
+.clock .hr{font:900 40px var(--sans);letter-spacing:-.06em;fill:var(--fg);text-anchor:middle}
+.clock .ap{font:600 7.5px var(--mono);letter-spacing:.18em;fill:var(--fg);text-anchor:middle;opacity:.85}
+.clock .tk{font:600 7px var(--mono);letter-spacing:.1em;fill:var(--fg);opacity:.6;text-anchor:middle;dominant-baseline:central}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:1.6cqw;align-items:end;height:11cqw}
+.week i{display:block;background:var(--fg);opacity:.42;height:var(--h);min-height:.6cqw;transform-origin:bottom;animation:growY .9s var(--out) both;animation-delay:var(--d)}
+.week i.pk{background:var(--a1);opacity:1}
+.weekl{display:grid;grid-template-columns:repeat(7,1fr);gap:1.6cqw;font:600 2.3cqw/1 var(--mono);text-align:center;opacity:.7;margin-top:-.8cqw}
+.weekl .pk{opacity:1;color:var(--a1)}
 
-/* ranks */
-.rank{list-style:none;display:flex;flex-direction:column;gap:.6cqw;margin-top:1cqw}
-.rank li{display:grid;grid-template-columns:9cqw 1fr auto;align-items:baseline;gap:2cqw;padding:2.3cqw 0;
-  border-bottom:.45cqw solid color-mix(in srgb,var(--fg) 20%,transparent)}
-.rank .rn{font-weight:900;font-size:6.6cqw;letter-spacing:-.04em}
-.rank .nm{font-weight:850;font-size:6.6cqw;letter-spacing:-.035em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.rank .ct{font:800 2.9cqw var(--mono);opacity:.7;white-space:nowrap}
-.rank li.first{background:var(--a1);color:var(--a2);border:0;border-radius:4.5cqw;padding:4cqw 4cqw;margin-bottom:1.4cqw;
-  grid-template-columns:auto 1fr;row-gap:1cqw;transform:rotate(-1.5deg)}
-.rank li.first .rn,.rank li.first .nm{font-size:12cqw;line-height:.9}
-.rank li.first .ct{grid-column:1/-1;opacity:.85}
+/* 3 tools */
+.chart{list-style:none;display:flex;flex-direction:column}
+.chart li{display:grid;grid-template-columns:8cqw 1fr auto;align-items:baseline;column-gap:1.5cqw;padding-top:2.3cqw}
+.chart .ix{font:600 2.6cqw var(--mono);letter-spacing:.08em;opacity:.7}
+.chart .nm{font-weight:800;font-size:6.6cqw;letter-spacing:-.04em;line-height:1}
+.chart .ct{font:600 2.7cqw var(--mono);letter-spacing:.04em;opacity:.78}
+.chart .track{grid-column:1/-1;height:.7cqw;background:color-mix(in srgb,currentColor 18%,transparent);margin-top:2.1cqw}
+.chart .track b{display:block;height:100%;width:var(--w);background:currentColor;transform-origin:left;animation:grow 1.1s var(--out) both;animation-delay:var(--d)}
+.chart li.first{grid-template-columns:1fr auto;padding-top:0}
+.chart li.first .nm{grid-column:1/-1;font-weight:900;font-size:23cqw;letter-spacing:-.065em;line-height:.9;margin-top:1cqw}
+.chart li.first .nm em{font-style:normal;background:linear-gradient(transparent 60%,var(--a1) 60% 90%,transparent 90%);padding:0 .07em;margin:0 -.07em}
+.chart li.first .track{margin-top:1.6cqw}
 
-/* languages */
-.sticker{position:relative;width:74cqw;aspect-ratio:1;display:grid;place-items:center;margin:0 auto}
-.sticker svg{position:absolute;inset:0;width:100%;height:100%;animation:spin 36s linear infinite}
-.sticker span{position:relative;font-weight:900;font-size:11.5cqw;letter-spacing:-.05em;color:var(--ink);transform:rotate(-8deg);text-align:center;line-height:.9;max-width:62cqw;overflow-wrap:anywhere}
-.pills{display:flex;flex-wrap:wrap;gap:2cqw;justify-content:center}
-.pill{padding:1.8cqw 3.6cqw;border-radius:99px;box-shadow:inset 0 0 0 .55cqw var(--fg);font-weight:800;font-size:4.2cqw;white-space:nowrap}
-.pill:nth-child(odd){transform:rotate(-3deg)}.pill:nth-child(even){transform:rotate(2.5deg)}
-.pill b{color:var(--a1);margin-right:1cqw}
+/* 4 languages */
+.st-name{font-weight:900;letter-spacing:-.05em;text-anchor:middle}
+.st-sub{font:600 6.4px var(--mono);letter-spacing:.2em;text-anchor:middle;opacity:.75}
+.cols{list-style:none;display:grid;grid-template-columns:1fr 1fr;column-gap:4.4cqw}
+.cols li{display:flex;align-items:baseline;gap:2cqw;border-top:.35cqw solid currentColor;padding:1.9cqw 0 2.3cqw;font-weight:800;font-size:5.2cqw;letter-spacing:-.035em;white-space:nowrap;overflow:hidden}
+.cols .ix{font:600 2.5cqw var(--mono);opacity:.7;letter-spacing:.08em}
 
-/* terminal */
-.term{background:#15151D;border-radius:3.4cqw;box-shadow:0 0 0 .4cqw #2A2A36,0 4cqw 10cqw rgba(0,0,0,.45);overflow:hidden;font:650 3.3cqw/1.45 var(--mono);color:#E9E9EF}
-.term-head{display:flex;gap:1.4cqw;align-items:center;padding:2.3cqw 3.2cqw;background:#1F1F2A}
-.term-head i{width:2.6cqw;height:2.6cqw;border-radius:50%;background:#FF5F57}
-.term-head i:nth-child(2){background:#FEBC2E}.term-head i:nth-child(3){background:#28C840}
-.term-head span{margin-left:auto;opacity:.45;font-size:2.7cqw}
-.term-body{padding:3cqw 3.4cqw 3.6cqw}
-.tp{color:var(--a1);margin-bottom:1.2cqw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tr{display:grid;grid-template-columns:17cqw 1fr 11cqw;align-items:center;gap:2.2cqw;margin-top:1cqw}
-.tr .bb{height:2.3cqw;background:#262633;border-radius:9px;overflow:hidden}
-.tr .bb b{display:block;height:100%;width:var(--w);background:var(--a1);border-radius:9px;transform-origin:left;animation:grow .9s cubic-bezier(.2,.9,.2,1) both;animation-delay:var(--d)}
+/* 5 terminal */
+.term{background:#1F1B18;border-radius:2.4cqw;box-shadow:inset 0 0 0 .3cqw color-mix(in srgb,var(--fg) 16%,transparent);overflow:hidden;font:500 3.1cqw/1.5 var(--mono)}
+.term-head{display:flex;gap:1.3cqw;align-items:center;padding:2.1cqw 3cqw;border-bottom:.3cqw solid color-mix(in srgb,var(--fg) 13%,transparent)}
+.term-head i{width:2.1cqw;height:2.1cqw;border-radius:50%;box-shadow:inset 0 0 0 .3cqw color-mix(in srgb,var(--fg) 45%,transparent)}
+.term-head span{margin-left:auto;opacity:.45;font-size:2.4cqw;letter-spacing:.08em}
+.term-body{padding:2.6cqw 3.2cqw 3.2cqw}
+.tp{color:var(--a1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:.8cqw}
+.tr{display:grid;grid-template-columns:16cqw 1fr 10cqw;align-items:center;gap:2.2cqw;margin-top:.7cqw}
+.tr .bb{height:1.4cqw;background:color-mix(in srgb,var(--fg) 11%,transparent)}
+.tr .bb b{display:block;height:100%;width:var(--w);background:var(--a1);transform-origin:left;animation:grow 1s var(--out) both;animation-delay:var(--d)}
 .tr .tc{text-align:right;opacity:.7}
-@keyframes grow{from{transform:scaleX(0)}}
-.danger{display:flex;gap:1.8cqw;flex-wrap:wrap}
-.danger span{font:800 3.3cqw var(--mono);padding:1.6cqw 2.8cqw;border-radius:2cqw;background:color-mix(in srgb,var(--a2) 22%,transparent);color:var(--a2);box-shadow:inset 0 0 0 .4cqw var(--a2)}
-.danger span.zero{opacity:.55}
+.flags{display:flex;gap:1.6cqw;flex-wrap:wrap}
+.flag{font:600 2.8cqw/1 var(--mono);padding:1.7cqw 2.6cqw;border-radius:99px;box-shadow:inset 0 0 0 .35cqw currentColor;letter-spacing:.02em}
+.flag.hot{background:var(--a1);color:var(--bg);box-shadow:none}
+.flag.zero{opacity:.42}
 
-/* tokens */
-.tok{display:flex;align-items:baseline;gap:2.4cqw;flex-wrap:wrap}
-.tok .h1{font-size:15cqw}
-.costcard{background:var(--a1);color:var(--bg);border-radius:5cqw;padding:5cqw 5.4cqw;transform:rotate(-2deg);display:flex;flex-direction:column;gap:2cqw;margin-top:1cqw}
-.costcard .mega{font-size:21cqw}
+/* 6 lines */
+.minimap{position:absolute;right:7cqw;top:20cqw;width:46cqw;display:flex;flex-direction:column;gap:1.5cqw;align-items:flex-start}
+.minimap i{display:block;height:1.5cqw;background:var(--fg);animation:wipe .9s var(--inout) both;animation-delay:var(--d)}
+.minimap i.hl{background:var(--a1)}
+.scale{position:relative;height:1.1cqw;background:color-mix(in srgb,currentColor 16%,transparent);margin:1.4cqw 0}
+.scale b{position:absolute;left:0;top:-1.3cqw;bottom:-1.3cqw;width:max(var(--w),1.4cqw);background:var(--a1);transform-origin:left;animation:grow 1s var(--out) 1.2s both}
+.scalel{display:flex;justify-content:space-between;font:600 2.35cqw/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;opacity:.85}
 
-/* manners */
-.vs{display:grid;grid-template-columns:1fr 1fr;gap:3cqw}
-.vs .col{border-radius:5cqw;padding:4cqw;display:flex;flex-direction:column;gap:2.2cqw}
-.vs .nice{background:var(--a1);color:var(--ink);transform:rotate(-1.5deg)}
-.vs .spicy{background:var(--ink);color:var(--cream);transform:rotate(1.5deg)}
-.vs .emo{font-size:10cqw;line-height:1}
-.vs .row{font-weight:700;font-size:3.7cqw;line-height:1.1}
-.vs .row b{font-weight:900;font-size:8cqw;display:block;letter-spacing:-.045em;line-height:.95}
-.meter{height:4.2cqw;border-radius:99px;background:var(--ink);overflow:hidden;display:flex}
-.meter i{display:block;height:100%;width:var(--w);background:var(--a1);transform-origin:left;animation:grow 1.3s .9s cubic-bezier(.2,.9,.2,1) both}
-.meterlbl{display:flex;justify-content:space-between;font:800 2.8cqw var(--mono);letter-spacing:.08em;text-transform:uppercase;margin-top:-1cqw}
+/* 7 receipt */
+.receiptwrap{transform:rotate(-1.6deg);filter:drop-shadow(0 2.4cqw 3cqw rgba(0,0,0,.28));margin:1cqw 0}
+.receipt{background:var(--paper);color:var(--ink);font:500 2.95cqw/1.35 var(--mono);padding:5cqw 5cqw 7cqw;display:flex;flex-direction:column;gap:1.9cqw;
+  --z:3.2cqw;-webkit-mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) 50%/var(--z) 100%;
+  mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) 50%/var(--z) 100%}
+.r-head{display:flex;justify-content:space-between;font-weight:700;letter-spacing:.1em}
+.r-dash{border-top:.35cqw dashed currentColor;opacity:.5}
+.r-row{display:flex;align-items:baseline;gap:1.2cqw;text-transform:uppercase;letter-spacing:.05em}
+.r-row i{flex:1;border-bottom:.35cqw dotted currentColor;opacity:.45;transform:translateY(-.5cqw)}
+.r-row b{font-weight:700}
+.r-total{display:flex;flex-direction:column;gap:.6cqw;text-transform:uppercase;letter-spacing:.1em;font-weight:700}
+.r-total .num{font-family:var(--sans);font-size:23cqw;line-height:.9;white-space:nowrap;text-transform:none}
+.receipt .voice{font-size:4.9cqw}
+.barcode{height:7.5cqw;background:repeating-linear-gradient(90deg,currentColor 0 .5cqw,transparent .5cqw 1.2cqw,currentColor 1.2cqw 1.5cqw,transparent 1.5cqw 2.7cqw,currentColor 2.7cqw 3.8cqw,transparent 3.8cqw 4.3cqw,currentColor 4.3cqw 4.6cqw,transparent 4.6cqw 5.7cqw)}
+.r-foot{text-align:center;letter-spacing:.16em;font-size:2.3cqw;opacity:.8}
 
-/* words */
-.statgrid{display:grid;grid-template-columns:1fr 1fr;gap:2.4cqw}
-.stat{background:color-mix(in srgb,var(--ink) 20%,transparent);border-radius:4cqw;padding:3.4cqw 3.6cqw}
-.stat b{display:block;font-weight:900;font-size:8.6cqw;letter-spacing:-.045em;line-height:1}
-.stat span{display:block;font-weight:700;font-size:3.2cqw;line-height:1.2;opacity:.92;margin-top:.8cqw}
-.bigphrase{font-weight:900;font-size:16cqw;line-height:.9;letter-spacing:-.055em;color:var(--a1);white-space:nowrap}
+/* 8 catchphrase */
+.bigquote{position:absolute;left:3cqw;top:5cqw;font:400 110cqw/1 var(--serif);opacity:.13}
+.say{font-family:var(--serif);font-style:italic;font-weight:400;font-size:14.5cqw;line-height:1;letter-spacing:-.035em}
+.say.xl{font-size:18cqw;line-height:.96} /* fitAll clears inline sizes, so the size lives here */
+.dash{height:3.2cqw;background:currentColor;margin:1.4cqw 0 .6cqw}
 
-/* calendar */
-.heat{display:grid;grid-template-rows:repeat(7,1fr);grid-auto-flow:column;grid-auto-columns:1fr;gap:min(.75cqw,4px);
-  width:min(100%,calc(var(--cols) * 7cqw));aspect-ratio:calc(var(--cols) / 7)}
-.heat i{border-radius:22%;background:color-mix(in srgb,var(--fg) 11%,transparent);opacity:0;animation:cell .4s ease-out forwards;animation-delay:calc(var(--i) * 3.5ms + .4s)}
-.heat i.l1{background:color-mix(in srgb,var(--a1) 32%,transparent)}
+/* 9 manners */
+.split{display:flex;height:11cqw}
+.split i{display:block;height:100%}
+.split .n{width:var(--w);background:var(--a1);transform-origin:left;animation:grow 1.2s var(--inout) .5s both}
+.split .s{flex:1;background:repeating-linear-gradient(135deg,var(--fg) 0 .9cqw,transparent .9cqw 2cqw);box-shadow:inset 0 0 0 .35cqw var(--fg)}
+.splitl{display:flex;justify-content:space-between}
+.splitl div:last-child{text-align:right}
+.splitl b{display:block;font-weight:900;font-size:9cqw;letter-spacing:-.05em;line-height:1}
+.splitl span{display:block;font:600 2.4cqw var(--mono);letter-spacing:.15em;text-transform:uppercase;margin-top:.8cqw}
+
+/* 10 words */
+.word{font-family:var(--serif);font-style:italic;font-weight:400;font-size:34cqw;line-height:.98;letter-spacing:-.045em}
+.quad{display:grid;grid-template-columns:1fr 1fr}
+.quad div{padding:2.3cqw 0 2.7cqw;border-top:.35cqw solid currentColor}
+.quad div:nth-child(odd){padding-right:3cqw}
+.quad div:nth-child(even){padding-left:3cqw;border-left:.35cqw solid currentColor}
+.quad b{display:block;font-weight:900;font-size:8.8cqw;letter-spacing:-.05em;line-height:1}
+.quad span{display:block;font:600 2.25cqw/1.35 var(--mono);letter-spacing:.1em;text-transform:uppercase;margin-top:1cqw;opacity:.85}
+
+/* 11 calendar */
+.heatwrap{width:min(100%,calc(var(--cols) * 6.4cqw));display:flex;flex-direction:column;gap:1.4cqw}
+.heat{display:grid;grid-template-rows:repeat(7,1fr);grid-auto-flow:column;grid-auto-columns:1fr;gap:min(.7cqw,4px)}
+.heat i{border-radius:24%;background:color-mix(in srgb,var(--fg) 10%,transparent);opacity:0;animation:cell .5s ease-out forwards;animation-delay:calc(var(--c) * 22ms + .5s)}
+.heat i.l1{background:color-mix(in srgb,var(--a1) 30%,transparent)}
 .heat i.l2{background:color-mix(in srgb,var(--a1) 55%,transparent)}
 .heat i.l3{background:color-mix(in srgb,var(--a1) 80%,transparent)}
-.heat i.l4{background:var(--a1);box-shadow:0 0 1.6cqw color-mix(in srgb,var(--a1) 70%,transparent)}
+.heat i.l4{background:var(--a1)}
 .heat i.pad{visibility:hidden}
-@keyframes cell{from{opacity:0;transform:scale(.3)}to{opacity:1;transform:none}}
-.duo{display:grid;grid-template-columns:1fr 1fr;gap:3cqw}
-.duo div{border-top:.6cqw solid var(--a1);padding-top:2.2cqw}
-.duo b{display:block;font-weight:900;font-size:10cqw;letter-spacing:-.05em;line-height:1}
-.duo span{display:block;font-weight:700;font-size:3.4cqw;line-height:1.2;opacity:.9;margin-top:1cqw}
+@keyframes cell{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:none}}
+.months{display:grid;grid-template-columns:repeat(var(--cols),1fr);gap:min(.7cqw,4px);font:600 2.1cqw/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;opacity:.7}
+.months span{grid-row:1;white-space:nowrap}
 
-/* personality */
-.pemoji{font-size:31cqw;line-height:1;text-align:center;filter:drop-shadow(0 2cqw 0 rgba(0,0,0,.16))}
-.pname{font-weight:900;font-size:14cqw;line-height:.86;letter-spacing:-.055em;text-align:center;text-wrap:balance}
-.persona .quip{text-align:center;max-width:none}
-.persona .chips{justify-content:center}
+/* 12 personality */
+.rays{position:absolute;left:50%;top:41%;width:250cqw;height:250cqw;margin:-125cqw 0 0 -125cqw;border-radius:50%;opacity:.13;
+  background:repeating-conic-gradient(var(--fg) 0 1.1deg,transparent 1.1deg 9deg);
+  -webkit-mask:radial-gradient(circle,transparent 13%,#000 14%,transparent 62%);mask:radial-gradient(circle,transparent 13%,#000 14%,transparent 62%);
+  animation:spin 160s linear infinite}
+.persona{align-items:center;text-align:center;justify-content:center}
+.pwrap{width:100%}
+.pthe{font:italic 400 8.4cqw/1 var(--serif);letter-spacing:-.02em;margin-bottom:-1cqw}
+.pname{font-weight:900;font-size:16cqw;line-height:.9;letter-spacing:-.06em;width:100%}
+.pname .mk>span{margin:0 auto}
+.persona .voice{max-width:76cqw}
+.tags{display:flex;gap:1.6cqw;flex-wrap:wrap;justify-content:center}
+.tag{font:600 2.5cqw/1 var(--mono);letter-spacing:.13em;text-transform:uppercase;padding:1.7cqw 2.6cqw;border-radius:99px;box-shadow:inset 0 0 0 .35cqw currentColor}
 
-/* share */
-.share{gap:3cqw;align-items:center;justify-content:center}
-.cardwrap{width:74cqw;aspect-ratio:4/5;border-radius:3cqw;overflow:hidden;box-shadow:0 5cqw 12cqw rgba(0,0,0,.55),0 0 0 .3cqw rgba(255,255,255,.08);background:#1A0B2E}
+/* 13 share */
+.share{align-items:center;justify-content:center;gap:3.2cqw}
+.cardwrap{width:70cqw;aspect-ratio:4/5;border-radius:1.6cqw;overflow:hidden;box-shadow:0 5cqw 11cqw rgba(0,0,0,.55),0 0 0 .25cqw rgba(255,255,255,.1);background:#15120F}
 .cardwrap img{width:100%;height:100%;display:block}
-.actions{display:flex;gap:2cqw;justify-content:center;flex-wrap:wrap}
-.btn{appearance:none;border:0;cursor:pointer;font:800 3.7cqw/1 var(--display);padding:3.2cqw 4.6cqw;border-radius:99px;background:#2A2934;color:var(--cream);transition:transform .12s}
-.btn:hover{transform:translateY(-2px)}
-.btn.primary{background:var(--lime);color:var(--ink)}
-.opts{display:flex;gap:4cqw;align-items:center;font:700 2.9cqw var(--mono);opacity:.85}
+.actions{display:flex;gap:1.8cqw;justify-content:center;flex-wrap:wrap}
+.btn{appearance:none;border:0;cursor:pointer;font:700 3.5cqw/1 var(--sans);letter-spacing:-.01em;padding:3.1cqw 4.6cqw;border-radius:99px;background:transparent;color:var(--fg);
+  box-shadow:inset 0 0 0 .35cqw color-mix(in srgb,var(--fg) 38%,transparent);transition:background .2s}
+.btn:hover{background:color-mix(in srgb,var(--fg) 10%,transparent)}
+.btn.primary{background:var(--a1);color:var(--bg);box-shadow:none}
+.btn.primary:hover{background:var(--a1);filter:brightness(.94)}
+.ways{display:flex;gap:2.6cqw;align-items:center}
+.way{appearance:none;border:0;cursor:pointer;width:6cqw;height:6cqw;border-radius:50%;background:var(--c);position:relative;box-shadow:inset 0 0 0 .3cqw rgba(255,255,255,.28)}
+.way::after{content:"";position:absolute;inset:31%;border-radius:50%;background:var(--k)}
+.way[aria-pressed=true]{outline:.45cqw solid var(--fg);outline-offset:.8cqw}
+.opts{display:flex;gap:4.4cqw;align-items:center;font:500 2.6cqw var(--mono);letter-spacing:.04em;opacity:.8}
 .opts label{display:flex;gap:1.4cqw;align-items:center;cursor:pointer}
-.opts input{accent-color:var(--lime);width:3.4cqw;height:3.4cqw}
+.opts input{accent-color:var(--lime);width:3.2cqw;height:3.2cqw}
 .linkbtn{appearance:none;border:0;background:none;color:inherit;font:inherit;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
-.toast{position:absolute;left:50%;bottom:6cqw;transform:translate(-50%,8cqw);opacity:0;z-index:30;background:var(--cream);color:var(--ink);
-  font:800 3.4cqw var(--display);padding:2.8cqw 4.6cqw;border-radius:99px;transition:.3s cubic-bezier(.2,.9,.2,1);pointer-events:none;white-space:nowrap}
+.toast{position:absolute;left:50%;bottom:11cqw;transform:translate(-50%,6cqw);opacity:0;z-index:30;background:var(--paper);color:var(--ink);
+  font:700 3.3cqw var(--sans);padding:2.8cqw 4.6cqw;border-radius:99px;transition:.4s var(--out);pointer-events:none;white-space:nowrap}
 .toast.on{transform:translate(-50%,0);opacity:1}
-.hint{position:absolute;bottom:3cqw;left:0;right:0;text-align:center;font:700 2.5cqw var(--mono);opacity:.45;z-index:20;letter-spacing:.06em}
 
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;animation-delay:0s!important;transition:none!important}
@@ -226,23 +289,27 @@ body{background:#07060B;color:var(--cream);font-family:var(--display);-webkit-fo
   <main id="story" aria-live="polite" aria-label="Claude Wrapped story">
     <div class="bars" id="bars"></div>
     <div class="top">
-      <span id="brand">Claude Wrapped</span><span class="demo" id="demoChip" hidden>Sample data</span>
+      <span class="brand">Claude Wrapped<i id="brandYear"></i></span><span class="demo" id="demoChip" hidden>Sample data</span>
       <span class="sp"></span>
       <button class="ibtn" id="pauseBtn" aria-label="Pause"></button>
     </div>
     <div id="slot"></div>
+    <div class="folio"><span id="folioL"></span><span id="folioR"></span></div>
     <div class="toast" id="toast"></div>
   </main>
+  <p id="keys">← → navigate · space pause · hold to freeze</p>
 </div>
 <script>window.__WRAPPED__ = /*__WRAPPED_DATA__*/null;</script>
 <script>
 (() => {
 'use strict';
 
-// ---------- palette ----------
-const P = { plum:'#1A0B2E', lime:'#CCFF3D', pink:'#FF5FA2', violet:'#6B4EFF', cobalt:'#1F3BFF', mint:'#3DF5C0',
-  sun:'#FFC93D', tomato:'#FF4D2E', clay:'#D97757', cream:'#F4EFE6', ink:'#0B0B0F', white:'#FFF8EE' };
-
+// ---------- inks ----------
+const P = { paper:'#F2EDE4', ink:'#15120F', plum:'#1B1024', lime:'#D2FF3A', clay:'#D9623B', cobalt:'#2742F5',
+  pink:'#FF8DB5', butter:'#F7D046', forest:'#0D3B2E', lilac:'#BDAEFF' };
+const SANS = 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+const SERIF = 'ui-serif, "New York", "Iowan Old Style", Charter, "Palatino Linotype", Palatino, Georgia, serif';
+const MONO = 'ui-monospace, "SF Mono", Menlo, Consolas, monospace';
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // ---------- formatting ----------
@@ -250,8 +317,7 @@ const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;
 const fmt = (n) => Math.round(n || 0).toLocaleString('en-US');
 const compact = (n) => {
   n = Math.round(n || 0);
-  const u = [[1e12,'T'],[1e9,'B'],[1e6,'M'],[1e3,'K']];
-  for (const [v, s] of u) if (n >= v) { const x = n / v; return (x >= 100 ? Math.round(x) : x >= 10 ? x.toFixed(1) : x.toFixed(2)).toString().replace(/\.?0+$/, '') + s; }
+  for (const [v, s] of [[1e12,'T'],[1e9,'B'],[1e6,'M'],[1e3,'K']]) if (n >= v) { const x = n / v; return (x >= 100 ? Math.round(x) : x >= 10 ? x.toFixed(1) : x.toFixed(2)).toString().replace(/\.?0+$/, '') + s; }
   return String(n);
 };
 const money = (n) => n >= 100 ? '$' + fmt(n) : '$' + (n || 0).toFixed(2);
@@ -264,37 +330,82 @@ const niceDate = (s) => { const d = parseDay(s); return `${MONTHS[d.getMonth()]}
 const localDay = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const pl = (n, one, many) => (n === 1 ? one : (many || one + 's'));
 const num = (n, f = 'int', delay = .35) => `<span data-count="${+n || 0}" data-fmt="${f}" data-delay="${delay}">${FMT[f](0)}</span>`;
-const d_ = (s) => `style="--d:${s}s"`;
-
-// ---------- decorations ----------
-function starPts(n, ro, ri, cx = 50, cy = 50) {
-  const pts = [];
-  for (let i = 0; i < n * 2; i++) { const r = i % 2 ? ri : ro; const a = Math.PI * i / n - Math.PI / 2; pts.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]); }
-  return pts;
-}
-const starPath = (n = 14, ro = 50, ri = 40) => 'M' + starPts(n, ro, ri).map((p) => p.map((v) => v.toFixed(2)).join(',')).join('L') + 'Z';
-const orb = (c, l, t, s, o = {}) => `<i class="orb" style="background:${c};left:${l};top:${t};width:${s};height:${s};--dx:${o.dx||'6cqw'};--dy:${o.dy||'-5cqw'};animation-duration:${o.t||9}s;opacity:${o.op||1}"></i>`;
-const burst = (c, l, t, s, n = 14, spin = 40, ri = 40, rev = false) => `<svg class="burst" viewBox="0 0 100 100" style="left:${l};top:${t};width:${s};height:${s};animation-duration:${spin}s;${rev?'animation-direction:reverse':''}"><path fill="${c}" d="${starPath(n, 50, ri)}"/></svg>`;
-const ring = (c, l, t, s, w = 5) => `<i class="ring" style="left:${l};top:${t};width:${s};height:${s};box-shadow:inset 0 0 0 ${w}cqw ${c}"></i>`;
-const marquee = (text, bg, fg, top, rot = -8, dur = 14) => {
-  const t = esc((text + '  ✦  ').repeat(10));
-  return `<div class="marquee" style="top:${top};--rot:${rot}deg;background:${bg};color:${fg}"><div style="animation-duration:${dur}s">${t}${t}</div></div>`;
-};
+const dl = (s) => `style="--d:${s}s"`;
+const mk = (inner, d = 0, cls = '', attr = '') => `<span class="mk ${cls}" ${attr}><span style="--d:${d}s">${inner}</span></span>`;
+const pad2 = (n) => String(n).padStart(2, '0');
 function seeded(seed) { let s = seed >>> 0 || 1; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
-function codeLines(n, colors) {
-  const r = seeded(7); let s = '';
-  for (let i = 0; i < n; i++) s += `<i style="width:${22 + r() * 62}%;margin-left:${Math.floor(r() * 4) * 7}%;background:${colors[i % colors.length]};animation-delay:${i * 55}ms"></i>`;
-  return `<div class="codelines">${s}</div>`;
+
+// ---------- colour helpers ----------
+const lum = (hex) => { const n = parseInt(hex.slice(1), 16); const f = (v) => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }; return .2126 * f(n >> 16) + .7152 * f(n >> 8 & 255) + .0722 * f(n & 255); };
+const contrast = (a, b) => { const [hi, lo] = [lum(a), lum(b)].sort((p, q) => q - p); return (hi + .05) / (lo + .05); };
+const onColor = (ac, c1, c2) => (contrast(ac, c1) >= contrast(ac, c2) ? c1 : c2);
+const rgba = (hex, al) => { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${n >> 8 & 255},${n & 255},${al})`; };
+
+// ---------- personality marks: one drawn glyph per archetype (100×100 box) ----------
+// s = stroke, l = light stroke, f = fill, c = dot [cx,cy,r], o = ring [cx,cy,r], t = text [str,x,y,size]
+const GLYPHS = {
+  night: [['f','M70 63 A30 30 0 1 1 41 23 A27 27 0 0 0 70 63 Z'], ['f','M76 14 L78.6 21.4 L86 24 L78.6 26.6 L76 34 L73.4 26.6 L66 24 L73.4 21.4 Z'], ['c',88,44,2.6]],
+  dawn: [['s','M12 68 H88'], ['s','M30 68 A20 20 0 0 1 70 68'], ['s','M50 30 V38'], ['s','M23 41 L29 47'], ['s','M77 41 L71 47'], ['l','M30 80 H70'], ['l','M40 90 H60']],
+  weekend: [['s','M10 42 Q14 56 26 56 H74 Q86 56 90 42'], ['o',32,69,6.5], ['o',68,69,6.5]],
+  polite: [['s','M20 20 H80 Q90 20 90 30 V60 Q90 70 80 70 H48 L32 84 V70 H20 Q10 70 10 60 V30 Q10 20 20 20 Z'], ['f','M50 58 C36 49 37 36 45 36 C48.5 36 50 39.5 50 39.5 C50 39.5 51.5 36 55 36 C63 36 64 49 50 58 Z']],
+  rage: [['s','M50 10 C52 30 74 36 74 60 C74 76 63 88 50 88 C37 88 26 76 26 60 C26 50 31 44 36 38 C38 46 43 48 45 45 C48 37 45 24 50 10 Z'], ['l','M50 77 C44 77 40 72 40 67 C40 62 45 59 50 52 C55 59 60 62 60 67 C60 72 56 77 50 77 Z']],
+  esc: [['s','M24 18 H76 Q88 18 88 30 V70 Q88 82 76 82 H24 Q12 82 12 70 V30 Q12 18 24 18 Z'], ['t','esc',50,58,24]],
+  rubber: [['o',50,50,36], ['s','M33 51 L45 63 L68 38']],
+  novelist: [['s','M50 30 C42 22 28 20 14 24 V76 C28 72 42 74 50 82 C58 74 72 72 86 76 V24 C72 20 58 22 50 30 Z'], ['s','M50 30 V82'], ['l','M24 38 H40'], ['l','M24 50 H40'], ['l','M60 38 H76'], ['l','M60 50 H76']],
+  haiku: [5, 7, 5].flatMap((n, row) => Array.from({ length: n }, (_, i) => ['c', 50 + (i - (n - 1) / 2) * 11.5, 31 + row * 19, 3.7])),
+  bash: [['s','M20 28 L46 50 L20 72'], ['s','M54 74 H82']],
+  delegator: [['c',50,22,9], ['s','M50 31 V50'], ['s','M20 67 V50 H80 V67'], ['s','M50 50 V67'], ['o',20,77,8], ['o',50,77,8], ['o',80,77,8]],
+  marathon: [['s','M30 22 H70 A28 28 0 0 1 70 78 H30 A28 28 0 0 1 30 22 Z'], ['s','M34 39 H66 A11 11 0 0 1 66 61 H34 A11 11 0 0 1 34 39 Z'], ['l','M50 22 V39']],
+  parallel: [['s','M26 54 V44 A24 24 0 0 1 74 44 V54'], ['s','M26 54 C26 68 18 70 13 80'], ['s','M42 56 C42 70 38 76 34 86'], ['s','M58 56 C58 70 62 76 66 86'], ['s','M74 54 C74 68 82 70 87 80'], ['c',41,42,3.2], ['c',59,42,3.2]],
+  visual: [['s','M14 34 V22 Q14 14 22 14 H34'], ['s','M66 14 H78 Q86 14 86 22 V34'], ['s','M86 66 V78 Q86 86 78 86 H66'], ['s','M34 86 H22 Q14 86 14 78 V66'], ['s','M50 39 V61'], ['s','M39 50 H61']],
+  surfer: [['s','M10 34 Q20 22 30 34 T50 34 T70 34 T90 34'], ['s','M10 52 Q20 40 30 52 T50 52 T70 52 T90 52'], ['s','M10 70 Q20 58 30 70 T50 70 T70 70 T90 70']],
+  vibe: [['f','M44 20 C46 42 56 52 78 54 C56 56 46 66 44 88 C42 66 32 56 10 54 C32 52 42 42 44 20 Z'], ['f','M78 10 C79 19 82 22 91 23 C82 24 79 27 78 36 C77 27 74 24 65 23 C74 22 77 19 78 10 Z']],
+};
+function glyphSVG(id, color) {
+  return `<g fill="none" stroke="${color}" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round">` + (GLYPHS[id] || GLYPHS.vibe).map(([t, a, b, r, fs]) =>
+    t === 's' ? `<path d="${a}"/>` : t === 'l' ? `<path d="${a}" stroke-width="3.6"/>` : t === 'f' ? `<path d="${a}" fill="${color}" stroke="none"/>` :
+    t === 'c' ? `<circle cx="${a}" cy="${b}" r="${r}" fill="${color}" stroke="none"/>` : t === 'o' ? `<circle cx="${a}" cy="${b}" r="${r}"/>` :
+    `<text x="${b}" y="${r}" font-size="${fs}" text-anchor="middle" fill="${color}" stroke="none" font-family="ui-monospace,Menlo,Consolas,monospace" font-weight="700">${a}</text>`).join('') + '</g>';
 }
-function confetti(n, colors) {
-  const r = seeded(42); let s = '';
-  for (let i = 0; i < n; i++) s += `<i style="left:${r() * 100}%;background:${colors[i % colors.length]};animation-duration:${3.2 + r() * 3.5}s;animation-delay:${-r() * 6}s;--sx:${(r() - .5) * 30}cqw;--r:${(r() > .5 ? 1 : -1) * (360 + r() * 720)}deg;${r() > .6 ? 'border-radius:50%;height:2.2cqw' : ''}"></i>`;
-  return `<div class="deco confetti">${s}</div>`;
+function glyphCanvas(c, id, X, Y, s, color) {
+  c.save(); c.translate(X, Y); c.scale(s, s); c.lineCap = 'round'; c.lineJoin = 'round'; c.strokeStyle = color; c.fillStyle = color;
+  if ('letterSpacing' in c) c.letterSpacing = '0px';
+  for (const [t, a, b, r, fs] of GLYPHS[id] || GLYPHS.vibe) {
+    c.lineWidth = t === 'l' ? 3.6 : 6.5;
+    if (t === 's' || t === 'l') c.stroke(new Path2D(a));
+    else if (t === 'f') c.fill(new Path2D(a));
+    else if (t === 'c') { c.beginPath(); c.arc(a, b, r, 0, 7); c.fill(); }
+    else if (t === 'o') { c.beginPath(); c.arc(a, b, r, 0, 7); c.stroke(); }
+    else if (t === 't') { c.font = `700 ${fs}px ${MONO}`; c.textAlign = 'center'; c.textBaseline = 'alphabetic'; c.fillText(a, b, r); }
+  }
+  c.restore();
+}
+
+// ---------- stamps (ring of type around a centre) ----------
+let uid = 0;
+function scallop(n, R, cx = 100, cy = 100) {
+  const pt = (i) => { const a = i / n * Math.PI * 2 - Math.PI / 2; return `${(cx + Math.cos(a) * R).toFixed(2)} ${(cy + Math.sin(a) * R).toFixed(2)}`; };
+  const r = (2 * R * Math.sin(Math.PI / n) / 2 * 1.06).toFixed(2);
+  let d = 'M' + pt(0);
+  for (let i = 1; i <= n; i++) d += `A${r} ${r} 0 0 1 ${pt(i % n)}`;
+  return d + 'Z';
+}
+function stamp(o) {
+  const id = 'arc' + (++uid), r = o.r || 78, c = 2 * Math.PI * r;
+  const reps = Math.max(1, Math.round(c / (o.ring.length * 7.3)));
+  return `<svg class="stamp ${o.cls || ''}" viewBox="0 0 200 200" style="width:${o.size};${o.style || ''}" aria-hidden="true">
+    <defs><path id="${id}" d="M${100 - r} 100 a${r} ${r} 0 1 1 ${2 * r} 0 a${r} ${r} 0 1 1 ${-2 * r} 0"/></defs>
+    ${o.scallop ? `<path d="${scallop(26, 91)}" fill="${o.fill || 'none'}" stroke="${o.stroke || 'none'}" stroke-width="1.6"/>` : ''}
+    ${o.disc || ''}
+    <g class="ringtext"><text class="rt" fill="${o.ink || 'currentColor'}"><textPath href="#${id}" textLength="${(c - 4).toFixed(1)}" lengthAdjust="spacing">${esc(o.ring.repeat(reps))}</textPath></text></g>
+    ${o.center || ''}
+  </svg>`;
 }
 
 // ---------- data (your stats, injected by the CLI — or sample data) ----------
 const D = window.__WRAPPED__ || makeDemo();
 const YEAR = D.year === 'all' ? 'All-time' : String(D.year);
+const YY = D.year === 'all' ? '∞' : YEAR.slice(2);
 
 // ---------- copy ----------
 const TOOL_NAMES = { Agent:'Subagents', MCP:'MCP tools', Todos:'Todo lists', 'Ask You':'Questions for you', 'Plan Mode':'Plan mode', SendUserFile:'Send file', 'Computer Use':'Computer use' };
@@ -322,14 +433,25 @@ const LANG_QUIP = {
   Zig:'Hipster systems programmer. Respect.', Haskell:'A monad is just a… never mind.', Markdown:'Not a coder. A novelist with a terminal.',
   JSON:'You think in curly braces.', YAML:'Indentation-driven development.',
 };
-const ARCH_COLORS = { // [c1, c2, c3, fg]
-  night:['#0E0B3D','#3B2AFF','#FF5FA2',P.cream], dawn:['#FF7A45','#FFC93D','#FF5FA2',P.ink], weekend:['#3DF5C0','#1F3BFF','#CCFF3D',P.ink],
-  polite:['#FFD6E8','#F4EFE6','#CCFF3D',P.ink], rage:['#FF4D2E','#7A0A1F','#FFC93D',P.white], esc:['#1A0B2E','#6B4EFF','#3DF5C0',P.cream],
-  rubber:['#CCFF3D','#3DF5C0','#FFC93D',P.ink], novelist:['#D97757','#6B2E1F','#FFC93D',P.white], haiku:['#3DF5C0','#CCFF3D','#F4EFE6',P.ink],
-  bash:['#0B0B0F','#1F3BFF','#3DF5C0',P.cream], delegator:['#6B4EFF','#FF5FA2','#FFC93D',P.white], marathon:['#FF5FA2','#FF4D2E','#FFC93D',P.ink],
-  parallel:['#6B4EFF','#1A0B2E','#3DF5C0',P.cream], visual:['#FFC93D','#FF5FA2','#6B4EFF',P.ink], surfer:['#1F3BFF','#3DF5C0','#F4EFE6',P.ink],
-  vibe:['#FF5FA2','#6B4EFF','#3DF5C0',P.white],
+// personality colourways: [paper, ink, accent]
+const ARCH = {
+  night:[P.plum,P.paper,P.lilac], dawn:[P.butter,P.ink,P.clay], weekend:[P.lime,P.ink,P.cobalt], polite:[P.pink,P.ink,P.paper],
+  rage:[P.clay,P.ink,P.butter], esc:[P.ink,P.paper,P.lime], rubber:[P.forest,P.paper,P.lime], novelist:[P.paper,P.ink,P.clay],
+  haiku:[P.paper,P.ink,P.forest], bash:[P.ink,P.paper,P.lime], delegator:[P.lilac,P.ink,P.cobalt], marathon:[P.clay,P.ink,P.paper],
+  parallel:[P.lilac,P.ink,P.plum], visual:[P.butter,P.ink,P.cobalt], surfer:[P.cobalt,P.paper,P.pink], vibe:[P.pink,P.ink,P.cobalt],
 };
+const WAYS = { ink:[P.ink,P.paper,P.lime], paper:[P.paper,P.ink,P.clay], cobalt:[P.cobalt,P.paper,P.butter], pink:[P.pink,P.ink,P.plum], forest:[P.forest,P.paper,P.lime] };
+const previewId = new URLSearchParams(location.search).get('p'); // ?p=night previews another mark + colourway
+const persona = { ...(D.personality || { id:'vibe', name:'The Vibe Coder', emoji:'✨', tagline:'You came. You prompted. You vibed.', traits:[] }), ...(ARCH[previewId] ? { id: previewId } : {}) };
+const personaWay = ARCH[persona.id] || ARCH.vibe;
+// "The Night Shift" → article set small in serif, the rest set big (one or two lines)
+function nameLines(name) {
+  const rest = name.replace(/^The\s+/i, '');
+  if (rest.length <= 10 || !rest.includes(' ')) return [rest];
+  const w = rest.split(' '); let best = [rest], bd = Infinity;
+  for (let i = 1; i < w.length; i++) { const a = w.slice(0, i).join(' '), b = w.slice(i).join(' '); const dd = Math.abs(a.length - b.length); if (dd < bd) { bd = dd; best = [a, b]; } }
+  return best;
+}
 
 function minutesQuip(m) {
   const lotr = 686; // LOTR extended trilogy, in minutes
@@ -346,7 +468,7 @@ function hourQuip(h) {
   if (h <= 21) return 'Clocked out. Kept shipping.';
   return 'Night owl detected. The moon is your standup.';
 }
-const DAY_QUIP = ['Sunday scaries? Never heard of them.','You actually like Mondays. Interesting.','Tuesday: the most productive day nobody talks about.',
+const DAY_QUIP = ['Sunday scaries? Never heard of them.','You actually like Mondays. Interesting.','The most productive day nobody talks about.',
   'Midweek momentum. Hump day? Pump day.','Thursday is the new Friday.','Friday deploys. Bold. Respect.','Saturdays are for side projects.'];
 function costQuip(u) {
   if (u < 1) return 'Less than a gumball. Frugal legend.';
@@ -359,67 +481,130 @@ function costQuip(u) {
   return 'A seed round. Have you considered raising?';
 }
 
+// ---------- figures ----------
+function dial(pct) {
+  const p = Math.max(1.6, Math.min(100, pct)); let ticks = '';
+  for (let i = 0; i < 60; i++) {
+    const a = i / 60 * Math.PI * 2, r0 = i % 5 ? 44.5 : 42;
+    ticks += `<line class="tick" x1="${(50 + Math.cos(a) * r0).toFixed(2)}" y1="${(50 + Math.sin(a) * r0).toFixed(2)}" x2="${(50 + Math.cos(a) * 48.5).toFixed(2)}" y2="${(50 + Math.sin(a) * 48.5).toFixed(2)}"/>`;
+  }
+  return `<svg class="dial" viewBox="0 0 100 100" aria-hidden="true">${ticks}<circle class="trk" cx="50" cy="50" r="34"/><circle class="arc" cx="50" cy="50" r="34" pathLength="100" style="--p:${p.toFixed(2)}"/><text x="50" y="50">${pct >= 10 ? Math.round(pct) : pct.toFixed(1)}%</text></svg>`;
+}
+function clockSVG(hours, peak) {
+  const max = Math.max(1, ...hours); let s = '';
+  for (let h = 0; h < 24; h++) {
+    const a = (h / 24) * Math.PI * 2 - Math.PI / 2;
+    const pt = (r) => [(120 + Math.cos(a) * r).toFixed(2), (120 + Math.sin(a) * r).toFixed(2)];
+    const [x1, y1] = pt(52), [x2, y2] = pt(56 + (hours[h] / max) * 42);
+    s += `<line class="rbar${h === peak ? ' peak' : ''}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" pathLength="1" style="--i:${h}"/>`;
+  }
+  const tk = [['12A', 0], ['6A', 6], ['12P', 12], ['6P', 18]].map(([t, h]) => { const a = (h / 24) * Math.PI * 2 - Math.PI / 2; return `<text class="tk" x="${(120 + Math.cos(a) * 111).toFixed(1)}" y="${(120 + Math.sin(a) * 111).toFixed(1)}">${t}</text>`; }).join('');
+  return `<svg class="clock zoom" viewBox="0 0 240 240" style="--d:.2s" aria-label="Prompts by hour of day">${s}${tk}<text class="hr" x="119" y="131">${peak % 12 || 12}</text><text class="ap" x="121" y="146">${peak < 12 ? 'AM' : 'PM'} · PEAK</text></svg>`;
+}
+function heatmap(d) {
+  const days = d.time.days || {}; const keys = Object.keys(days).sort();
+  if (!keys.length) return '';
+  const from = parseDay((d.range && d.range.from) || keys[0]), to = parseDay((d.range && d.range.to) || keys[keys.length - 1]);
+  const start = new Date(from); start.setDate(start.getDate() - start.getDay());
+  const vals = Object.values(days).filter(Boolean).sort((a, b) => a - b);
+  const q = (p) => vals[Math.floor(p * (vals.length - 1))];
+  const [t1, t2, t3] = [q(.25), q(.55), q(.85)];
+  let cells = '', n = 0, lastM = -1; const marks = [];
+  for (const dt = new Date(start); dt <= to; dt.setDate(dt.getDate() + 1), n++) {
+    const col = Math.floor(n / 7), v = days[localDay(dt)] || 0;
+    if (dt >= from && dt.getMonth() !== lastM) { marks.push([col, MONTHS[dt.getMonth()]]); lastM = dt.getMonth(); }
+    const lvl = dt < from ? 'pad' : !v ? 'l0' : v <= t1 ? 'l1' : v <= t2 ? 'l2' : v <= t3 ? 'l3' : 'l4';
+    cells += `<i class="${lvl}" style="--c:${col}"></i>`;
+  }
+  const cols = Math.ceil(n / 7); let prev = -9;
+  const labels = marks.filter(([c]) => (c - prev >= 3 ? ((prev = c), true) : false)).map(([c, m]) => `<span style="grid-column:${c + 1}">${m}</span>`).join('');
+  return `<div class="heatwrap" style="--cols:${cols}"><div class="heat" style="aspect-ratio:${cols}/7" aria-label="Activity calendar">${cells}</div><div class="months">${labels}</div></div>`;
+}
+function minimap(n) {
+  const r = seeded(11); let s = '';
+  for (let i = 0; i < n; i++) s += `<i class="${r() > .72 ? 'hl' : ''}" style="width:${Math.round(18 + r() * 70)}%;margin-left:${Math.floor(r() * 4) * 8}%;--d:${(.1 + i * .045).toFixed(2)}s"></i>`;
+  return `<div class="minimap" aria-hidden="true">${s}</div>`;
+}
+
 // ---------- slides ----------
 function buildSlides(d) {
   const S = [];
   const T = d.totals, W = d.words, CL = d.claude, tm = d.time;
-  const theme = (bg, fg, a1, a2) => ({ bg, fg, a1, a2 });
+  const th = (bg, fg, a1) => ({ bg, fg, a1 });
 
   // 0 · intro
   const range = d.range ? `Based on your local history · ${niceDate(d.range.from)} – ${niceDate(d.range.to)}` : '';
-  S.push({ id:'intro', dur:0, theme:theme(P.plum, P.cream, P.lime, P.pink), html:`
-    <div class="deco">${burst(P.lime,'58%','-22%','74cqw',16,50,41)}${orb(P.pink,'-26%','72%','72cqw',{t:10})}${orb(P.violet,'62%','86%','46cqw',{t:7,dx:'-8cqw'})}${ring(P.cobalt,'-16%','16%','30cqw',4)}</div>
+  S.push({ id:'intro', name:'npx claudewrapped', dur:0, theme:th(P.plum, P.paper, P.lime), html:`
+    <div class="deco"><div class="ghost">${esc(YY)}</div></div>
     <div class="content">
+      <div class="introtop">
+        <div class="label rv" ${dl(.1)}>Your year in<br>Claude Code</div>
+        ${stamp({ ring:`UNWRAP YOUR YEAR · ${YEAR.toUpperCase()} · `, size:'27cqw', cls:'zoom a1', style:'--d:.3s;margin:-2cqw -1cqw 0 0', scallop:true, stroke:'currentColor', r:74,
+          center:`<text class="st-yy" x="98" y="119">’${esc(YY)}</text>` })}
+      </div>
       <div class="spacer"></div>
-      <div class="kicker rise" ${d_(.1)}>${esc(YEAR)} · Your year in Claude Code</div>
-      <h1 class="title pop" ${d_(.2)}>Claude<br><span class="w">Wrapped</span><span class="yr">${esc(YEAR === 'All-time' ? '∞' : "'" + YEAR.slice(2))}</span></h1>
-      <p class="lead rise" ${d_(.55)}>A year of prompts, panics &amp; “you’re absolutely right.”</p>
-      <div class="spacer"></div>
-      <button class="cta rise" ${d_(.8)} data-act="start">Unwrap it →</button>
-      <p class="fine rise" ${d_(1)}>${d.demo ? '✨ This is sample data. Run <b>npx claudewrapped</b> for yours.' : '🔒 Computed on your machine. Nothing was uploaded.'}<br>${esc(range)}</p>
+      <h1 class="title">${mk('Claude', .2)}${mk('<em>Wrapped</em>', .34)}</h1>
+      <p class="voice rv" ${dl(.8)}>A year of prompts, panics &amp; “you’re absolutely right.”</p>
+      <div class="spacer" style="flex:.55"></div>
+      <button class="cta rv" ${dl(1)} data-act="start">Unwrap it <span aria-hidden="true">→</span></button>
+      <p class="fine rv" ${dl(1.15)}>${d.demo ? 'This is sample data. Run npx claudewrapped for yours.' : 'Computed on your machine. Nothing was uploaded.'}<br>${esc(range)}</p>
     </div>` });
 
   // 1 · minutes
-  const chips = [`${fmt(T.sessions)} ${pl(T.sessions,'session')}`, `${fmt(T.projects)} ${pl(T.projects,'project')}`, `${fmt(T.activeDays)} ${pl(T.activeDays,'day')}`];
-  if (tm.maxParallel >= 3) chips.push(`up to ${tm.maxParallel} Claudes at once 🐙`);
-  S.push({ id:'minutes', dur:7500, theme:theme(P.lime, P.ink, P.violet, P.pink), html:`
-    <div class="deco">${orb(P.violet,'58%','-12%','62cqw')}${burst(P.pink,'-24%','64%','62cqw',12,60,36)}${marquee('TIME FLIES WHEN YOU’RE PROMPTING', P.ink, P.lime, '91%', -5, 18)}</div>
-    <div class="content mid">
-      <div class="kicker rise">Minutes together</div>
-      <p class="lead rise" ${d_(.15)}>This year, you and Claude spent</p>
-      <div class="mega pop" data-fit ${d_(.3)}>${num(T.minutes, 'int', .45)}</div>
-      <p class="h2 rise" ${d_(.6)}>minutes together</p>
-      <p class="quip rise" ${d_(1)}>${minutesQuip(T.minutes)}</p>
-      <div class="chips rise" ${d_(1.35)}>${chips.map((c) => `<span class="chip">${esc(c)}</span>`).join('')}</div>
-      <div style="height:10cqw"></div>
-    </div>` });
+  {
+    const yrPct = T.minutes / 525600 * 100, fullDays = T.minutes / 1440;
+    const meta = [[fmt(T.sessions), pl(T.sessions, 'session')], [fmt(T.projects), pl(T.projects, 'project')], [fmt(T.activeDays), pl(T.activeDays, 'day') + ' active']];
+    if (tm.maxParallel >= 3) meta.push([tm.maxParallel, 'Claudes at once']);
+    S.push({ id:'minutes', name:'Time together', dur:7500, theme:th(P.lime, P.ink, P.ink), html:`
+      <div class="content">
+        <div class="label rv">Minutes together</div>
+        <div class="spacer"></div>
+        <p class="voice rv" ${dl(.15)}>This year, you and Claude spent</p>
+        ${mk(num(T.minutes, 'int', .35), .25, 'num', 'data-fit')}
+        <p class="sub rv" ${dl(.6)}>minutes together.</p>
+        <div class="fig rv" ${dl(.9)}>
+          ${dial(yrPct)}
+          <div class="label">of ${d.year === 'all' ? 'a full' : 'your entire'} year<br>≈ ${fullDays.toFixed(1)} days, nonstop</div>
+        </div>
+        <p class="voice rv" ${dl(1.15)}>${minutesQuip(T.minutes)}</p>
+        <div class="spacer"></div>
+        <div class="meta rv" ${dl(1.4)}>${meta.map(([n, l]) => `<div><b>${n}</b><span>${esc(l)}</span></div>`).join('')}</div>
+      </div>` });
+  }
 
   // 2 · clock
-  S.push({ id:'clock', dur:7500, theme:theme(P.cobalt, P.cream, P.sun, P.mint), html:`
-    <div class="deco">${orb(P.mint,'70%','70%','56cqw',{op:.9})}${orb(P.sun,'-30%','-8%','50cqw',{t:11})}<div class="dots"></div></div>
-    <div class="content mid">
-      <div class="kicker rise">Your peak hour</div>
-      <div class="h1 slam" ${d_(.2)} style="font-size:22cqw;color:var(--a1)">${hourLabel(tm.peakHour)}</div>
-      ${clockSVG(tm.hours, tm.peakHour)}
-      <p class="quip rise" ${d_(1.2)}>${hourQuip(tm.peakHour)}</p>
-      <div class="chips rise" ${d_(1.5)}><span class="chip">Favorite day: ${DAYS[tm.peakWeekday]}s</span></div>
-      <p class="fine rise" ${d_(1.7)}>${DAY_QUIP[tm.peakWeekday]}</p>
-    </div>` });
+  {
+    const wmax = Math.max(1, ...tm.weekdays);
+    S.push({ id:'clock', name:'Peak hour', dur:7500, theme:th(P.cobalt, P.paper, P.butter), html:`
+      <div class="content">
+        <div class="label rv">Your peak hour</div>
+        ${clockSVG(tm.hours, tm.peakHour)}
+        <p class="voice rv" ${dl(1.1)} style="text-align:center">${hourQuip(tm.peakHour)}</p>
+        <div class="spacer"></div>
+        <div class="rv" ${dl(1.35)}>
+          <div class="week">${tm.weekdays.map((v, i) => `<i class="${i === tm.peakWeekday ? 'pk' : ''}" style="--h:${Math.max(4, v / wmax * 100)}%;--d:${(1.4 + i * .05).toFixed(2)}s"></i>`).join('')}</div>
+        </div>
+        <div class="weekl rv" ${dl(1.4)}>${'SMTWTFS'.split('').map((c, i) => `<span class="${i === tm.peakWeekday ? 'pk' : ''}">${c}</span>`).join('')}</div>
+        <div class="rv" ${dl(1.6)}><div class="label">Favorite day — ${DAYS[tm.peakWeekday]}s</div><p class="fine">${esc(DAY_QUIP[tm.peakWeekday])}</p></div>
+      </div>` });
+  }
 
   // 3 · tools
   if (d.tools.length) {
     const t1 = d.tools[0], rest = d.tools.slice(1, 5);
-    S.push({ id:'tools', dur:8000, theme:theme(P.pink, P.ink, P.plum, P.lime), html:`
-      <div class="deco">${burst(P.lime,'56%','-14%','58cqw',20,30,42)}${burst(P.plum,'74%','90%','40cqw',12,40,36,true)}</div>
+    S.push({ id:'tools', name:'Top tools', dur:8000, theme:th(P.paper, P.ink, P.clay), html:`
       <div class="content">
-        <div class="kicker rise">Your top artists were…</div>
-        <h2 class="h1 rise" ${d_(.15)}>Your Top<br>Tools</h2>
-        <ol class="rank">
-          <li class="first pop" ${d_(.4)}><span class="rn">#1</span><span class="nm">${esc(toolName(t1.name))}</span><span class="ct">${fmt(t1.count)} plays</span></li>
-          ${rest.map((t, i) => `<li class="rise" ${d_(.8 + i * .15)}><span class="rn">${i + 2}</span><span class="nm">${esc(toolName(t.name))}</span><span class="ct">${fmt(t.count)}</span></li>`).join('')}
+        <div class="label rv">Top tools</div>
+        <p class="voice rv" ${dl(.12)}>Your top artists were…</p>
+        <ol class="chart">
+          <li class="first"><span class="ix rv" ${dl(.25)}>01</span><span class="ct rv" ${dl(.25)}>${fmt(t1.count)} plays</span>
+            ${mk(`<em>${esc(toolName(t1.name))}</em>`, .3, 'nm', 'data-fit')}
+            <i class="track"><b style="--w:100%;--d:.7s"></b></i></li>
+          ${rest.map((t, i) => `<li class="rv" ${dl(.8 + i * .1)}><span class="ix">${pad2(i + 2)}</span><span class="nm">${esc(toolName(t.name))}</span><span class="ct">${fmt(t.count)}</span>
+            <i class="track"><b style="--w:${Math.max(1.5, t.count / t1.count * 100).toFixed(1)}%;--d:${(1 + i * .1).toFixed(2)}s"></b></i></li>`).join('')}
         </ol>
         <div class="spacer"></div>
-        <p class="quip rise" ${d_(1.6)}>${esc(TOOL_QUIP[t1.name] || 'A person of refined taste.')} <b>You're in the top 100% of ${esc(toolName(t1.name))} users.</b></p>
+        <p class="voice rv" ${dl(1.5)}>${esc(TOOL_QUIP[t1.name] || 'A person of refined taste.')} <b>You’re in the top 100% of ${esc(toolName(t1.name))} users.</b></p>
       </div>` });
   }
 
@@ -431,16 +616,17 @@ function buildSlides(d) {
     const others = d.languages.filter((l) => l !== genre).slice(0, 4);
     const md = prose.find((l) => l.name === 'Markdown');
     const honorable = md && genre !== md && md.count > genre.count
-      ? `<p class="fine rise" ${d_(1.8)}>Honorable mention: Markdown, which you touched more than any actual programming language. Novelist behavior.</p>` : '';
-    S.push({ id:'langs', dur:7500, theme:theme(P.violet, P.cream, P.lime, P.pink), html:`
-      <div class="deco">${marquee(genre.name.toUpperCase(), P.pink, P.ink, '91%', -6, 16)}${orb(P.mint,'-18%','8%','30cqw',{op:.9})}</div>
-      <div class="content mid">
-        <div class="kicker rise" ${d_(.1)}>Your top genre</div>
-        <div class="sticker pop" ${d_(.25)}><svg viewBox="0 0 100 100"><path fill="${P.lime}" d="${starPath(22, 50, 43)}"/></svg><span>${esc(genre.name)}</span></div>
-        <div class="pills rise" ${d_(.9)}>${others.map((l, i) => `<span class="pill"><b>#${i + 2}</b>${esc(l.name)}</span>`).join('')}</div>
-        <p class="quip rise" ${d_(1.3)} style="text-align:center">${esc(LANG_QUIP[genre.name] || 'A person of refined taste.')}</p>
+      ? `<p class="fine rv" ${dl(1.5)}>Honorable mention: Markdown, which you touched more than any actual programming language. Novelist behavior.</p>` : '';
+    const fs = Math.min(44, 132 / (genre.name.length * .56));
+    S.push({ id:'langs', name:'Top genre', dur:7500, theme:th(P.clay, P.ink, P.paper), html:`
+      <div class="content">
+        <div class="label rv">Your top genre</div>
+        ${stamp({ ring:`TOP GENRE · ${YEAR.toUpperCase()} · `, size:'66cqw', cls:'zoom', style:'--d:.2s;margin:0 auto', scallop:true, fill:P.paper, ink:P.ink, r:74,
+          center:`<g transform="rotate(-7 100 100)" fill="${P.ink}"><text class="st-name" x="100" y="${(100 + fs * .28).toFixed(1)}" font-size="${fs.toFixed(1)}">${esc(genre.name)}</text><text class="st-sub" x="100" y="${(100 + fs * .28 + 13).toFixed(1)}">${fmt(genre.count)} ${pl(genre.count, 'EDIT')}</text></g>` })}
+        <ol class="cols rv" ${dl(.8)}>${others.map((l, i) => `<li><span class="ix">${pad2(i + 2)}</span>${esc(l.name)}</li>`).join('')}</ol>
+        <div class="spacer"></div>
+        <p class="voice rv" ${dl(1.2)}>${esc(LANG_QUIP[genre.name] || 'A person of refined taste.')}</p>
         ${honorable}
-        <div style="height:9cqw"></div>
       </div>` });
   }
 
@@ -449,121 +635,130 @@ function buildSlides(d) {
   if (B.total > 0) {
     const tops = B.top.slice(0, 6), max = Math.max(1, ...tops.map((t) => t.count));
     let bq;
-    if (B.rmrf >= 100) bq = `<b>rm -rf ×${fmt(B.rmrf)}.</b> That's not a workflow, that's a lifestyle.`;
+    if (B.rmrf >= 100) bq = `<b>rm -rf ×${fmt(B.rmrf)}.</b> That’s not a workflow, that’s a lifestyle.`;
     else if (B.rmrf > 0) bq = `<b>rm -rf ×${fmt(B.rmrf)}.</b> Living dangerously.`;
     else bq = 'Zero rm -rf. Boring. Safe. Correct.';
-    bq += B.forcePush > 0 ? ` And ${fmt(B.forcePush)} force ${pl(B.forcePush,'push','pushes')}. We won't tell your team.` : ' Zero force pushes. Your teammates thank you.';
-    S.push({ id:'term', dur:8500, theme:theme(P.ink, '#ECECF2', P.mint, P.tomato), html:`
-      <div class="deco"><div class="dots"></div>${orb(P.mint,'64%','-16%','50cqw',{op:.18})}</div>
+    bq += B.forcePush > 0 ? ` And ${fmt(B.forcePush)} force ${pl(B.forcePush,'push','pushes')}. We won’t tell your team.` : ' Zero force pushes. Your teammates thank you.';
+    const flag = (label, n) => `<span class="flag ${n ? 'hot' : 'zero'}">${label} ×${fmt(n)}</span>`;
+    S.push({ id:'term', name:'Shell', dur:8500, theme:th(P.ink, P.paper, P.lime), html:`
       <div class="content">
-        <div class="kicker rise">Claude ran</div>
-        <div class="mega pop a1" data-fit ${d_(.15)}>${num(B.total, 'int', .3)}</div>
-        <p class="h2 rise" ${d_(.4)}>shell commands for you</p>
-        <div class="term rise" ${d_(.6)}>
+        <div class="label rv">Claude ran</div>
+        ${mk(num(B.total, 'int', .3), .15, 'num a1', 'data-fit')}
+        <p class="sub rv" ${dl(.45)}>shell commands for you.</p>
+        <div class="term rv" ${dl(.65)}>
           <div class="term-head"><i></i><i></i><i></i><span>zsh — wrapped</span></div>
           <div class="term-body">
             <div class="tp">$ history | sort | uniq -c | sort -rn</div>
-            ${tops.map((t, i) => `<div class="tr"><span>${esc(t.name)}</span><span class="bb"><b style="--w:${Math.max(4, t.count / max * 100)}%;--d:${.9 + i * .1}s"></b></span><span class="tc">${compact(t.count)}</span></div>`).join('')}
+            ${tops.map((t, i) => `<div class="tr"><span>${esc(t.name)}</span><span class="bb"><b style="--w:${Math.max(3, t.count / max * 100).toFixed(1)}%;--d:${(.95 + i * .08).toFixed(2)}s"></b></span><span class="tc">${compact(t.count)}</span></div>`).join('')}
           </div>
         </div>
-        <div class="danger rise" ${d_(1.4)}>
-          <span class="${B.rmrf ? '' : 'zero'}">rm -rf ×${fmt(B.rmrf)}</span><span class="${B.forcePush ? '' : 'zero'}">push --force ×${fmt(B.forcePush)}</span><span class="${B.sudo ? '' : 'zero'}">sudo ×${fmt(B.sudo)}</span>
-        </div>
-        <p class="quip rise" ${d_(1.7)}>${bq}</p>
+        <div class="flags rv" ${dl(1.4)}>${flag('rm -rf', B.rmrf)}${flag('push --force', B.forcePush)}${flag('sudo', B.sudo)}</div>
+        <div class="spacer"></div>
+        <p class="voice rv" ${dl(1.65)}>${bq}</p>
       </div>` });
   }
 
   // 6 · lines of code
   if (T.linesWritten > 0) {
     const pct = T.linesWritten / 40e6 * 100;
-    const lq = pct >= 0.1
-      ? `That's <b>${pct >= 1 ? pct.toFixed(1) : pct.toFixed(2)}% of the Linux kernel.</b> Linus, watch your back.`
-      : `Printed out, that's <b>${fmt(Math.max(1, T.linesWritten / 55))} ${pl(Math.round(T.linesWritten / 55), 'page')}.</b> Please don't.`;
-    S.push({ id:'lines', dur:7500, theme:theme(P.sun, P.ink, P.tomato, P.cobalt), html:`
-      <div class="deco">${codeLines(9, [P.tomato, P.cobalt, P.ink, P.white])}</div>
+    const lq = pct >= 0.1 ? 'Linus, watch your back.' : `Printed out, that’s ${fmt(Math.max(1, T.linesWritten / 55))} ${pl(Math.round(T.linesWritten / 55), 'page')}. Please don’t.`;
+    S.push({ id:'lines', name:'Lines of code', dur:7500, theme:th(P.butter, P.ink, P.cobalt), html:`
+      <div class="deco">${minimap(17)}</div>
       <div class="content">
+        <div class="label rv">Claude wrote</div>
         <div class="spacer"></div>
-        <div class="kicker rise">Claude wrote</div>
-        <div class="mega pop" data-fit ${d_(.2)}>${num(T.linesWritten, 'int', .35)}</div>
-        <p class="h2 rise" ${d_(.55)}>lines of code for you</p>
-        <p class="lead rise" ${d_(.8)}>across ${fmt(T.filesTouched)} ${pl(T.filesTouched,'file')}.</p>
-        <p class="quip rise" ${d_(1.2)}>${lq}</p>
-        <p class="fine rise" ${d_(1.5)}>…and deleted ${fmt(T.linesRemoved)}. Less is more.</p>
+        ${mk(num(T.linesWritten, 'int', .35), .2, 'num', 'data-fit')}
+        <p class="sub rv" ${dl(.55)}>lines of code for you,</p>
+        <p class="voice rv" ${dl(.75)}>across ${fmt(T.filesTouched)} ${pl(T.filesTouched, 'file')}.</p>
+        <div class="rv" ${dl(1)} style="margin-top:3cqw">
+          <div class="scalel"><span>You · ${pct >= 1 ? pct.toFixed(1) : pct >= .01 ? pct.toFixed(2) : '<0.01'}%</span><span>Linux kernel · 40M lines</span></div>
+          <div class="scale"><b style="--w:${Math.min(100, pct).toFixed(2)}%"></b></div>
+        </div>
+        <p class="voice rv" ${dl(1.3)}>${lq}</p>
+        <p class="fine rv" ${dl(1.5)}>…and deleted ${fmt(T.linesRemoved)}. Less is more.</p>
       </div>` });
   }
 
-  // 7 · tokens & cost
+  // 7 · tokens & cost — a receipt
   const tk = d.tokens;
   if (tk.total > 0) {
-    const read = tk.input + tk.cacheRead + tk.cacheWrite;
-    const moby = tk.output / 280000;
-    const mq = moby >= 1 ? `That's <b>${fmt(moby)} Moby-${moby >= 1.5 ? 'Dicks' : 'Dick'}</b> of output. Call me Claude.` : `That's ${Math.round(moby * 100)}% of Moby-Dick. Call me Claude.`;
-    const m1 = d.models[0];
-    S.push({ id:'tokens', dur:9000, theme:theme(P.mint, P.ink, P.plum, P.violet), html:`
-      <div class="deco">${burst(P.violet,'62%','-10%','48cqw',10,45,30,true)}</div>
-      <div class="content mid">
-        <div class="kicker rise">Token economics</div>
-        <div class="tok rise" ${d_(.15)}><span class="lead">Claude read</span><span class="h1">${num(read, 'compact', .3)}</span><span class="lead">tokens</span></div>
-        <div class="tok rise" ${d_(.4)}><span class="lead">and wrote</span><span class="h1">${num(tk.output, 'compact', .55)}</span></div>
-        <p class="quip rise" ${d_(.8)}>${mq}</p>
-        <div class="costcard pop" ${d_(1.1)}>
-          <div class="kicker">At API prices, that's about</div>
-          <div class="mega" data-fit>${num(d.cost.usd, 'money', 1.3)}</div>
-          <p class="quip">${esc(costQuip(d.cost.usd))}</p>
-        </div>
-        <p class="fine rise" ${d_(1.6)}>${m1 ? `Mostly powered by ${esc(m1.name)} (${Math.round(m1.share * 100)}%). ` : ''}Estimated from token usage at public API rates — your actual bill may differ, especially on a plan.</p>
+    const read = tk.input + tk.cacheRead + tk.cacheWrite, moby = tk.output / 280000, m1 = d.models[0];
+    const row = (k, v) => `<div class="r-row"><span>${k}</span><i></i><b>${v}</b></div>`;
+    S.push({ id:'tokens', name:'Token economics', dur:9500, theme:th(P.forest, P.paper, P.lime), html:`
+      <div class="content">
+        <div class="label rv">Token economics</div>
+        <div class="spacer"></div>
+        <div class="receiptwrap zoom" ${dl(.2)}><div class="receipt">
+          <div class="r-head"><span>CLAUDE WRAPPED</span><span>№ ${esc(YEAR.toUpperCase())}</span></div>
+          <div class="r-dash"></div>
+          ${row('Tokens read', compact(read))}
+          ${row('Tokens written', compact(tk.output))}
+          ${row('Moby-Dicks of output', moby >= 10 ? fmt(moby) : moby.toFixed(1))}
+          ${m1 ? row('Mostly', `${esc(m1.name)} · ${Math.round(m1.share * 100)}%`) : ''}
+          <div class="r-dash"></div>
+          <div class="r-total"><span>Total at API prices</span><div class="num" data-fit>${num(d.cost.usd, 'money', .9)}</div></div>
+          <div class="r-dash"></div>
+          <p class="voice">${esc(costQuip(d.cost.usd))}</p>
+          <div class="barcode"></div>
+          <div class="r-foot">THANK YOU FOR PROMPTING · CALL ME CLAUDE</div>
+        </div></div>
+        <div class="spacer"></div>
+        <p class="fine rv" ${dl(1.4)}>Estimated from token usage at public API rates. Your actual bill may differ, especially on a plan.</p>
       </div>` });
   }
 
   // 8 · catchphrases
   {
     const ar = CL.absolutelyRight, useAR = ar >= 5;
-    const head = useAR
-      ? `<div class="kicker rise">Claude's catchphrase of the year</div>
-         <p class="h2 rise" ${d_(.2)} style="font-size:10cqw">“You’re absolutely right!”</p>
-         <div class="mega pop" data-fit ${d_(.45)}>${num(ar, 'x', .5)}</div>
-         <p class="quip rise" ${d_(.9)}>${ar >= 50 ? 'And honestly? You weren’t. Not every time.' : 'Only sometimes were you actually right.'}</p>`
-      : `<div class="kicker rise">Claude's punctuation of the year</div>
-         <p class="h2 rise" ${d_(.2)} style="font-size:11cqw">The em dash —</p>
-         <div class="mega pop" data-fit ${d_(.45)}>${num(CL.emDashes, 'x', .5)}</div>
-         <p class="quip rise" ${d_(.9)}>Claude said “You’re absolutely right!” <b>${fmt(ar)} ${pl(ar,'time')}.</b> ${ar === 0 ? 'Character development.' : 'Growth.'} The em dashes, however — those stayed.</p>`;
     const rows = [
       ['“Let me…”', CL.letMe], ['“Great catch / point / idea”', CL.greatCatch], ['“Perfect!”', CL.perfect],
       ['Apologies', CL.apology], ['“Great question”', CL.greatQuestion],
-      useAR ? ['Em dashes —', CL.emDashes] : ['“You’re absolutely right”', CL.absolutelyRight],
+      useAR ? ['Em dashes —', CL.emDashes] : ['“You’re absolutely right!”', CL.absolutelyRight],
     ].sort((a, b) => b[1] - a[1]).slice(0, 4);
-    S.push({ id:'catch', dur:8000, theme:theme(P.clay, P.white, P.plum, P.sun), html:`
-      <div class="deco"><span class="bigquote" style="color:${P.plum};left:-6cqw;top:6cqw;opacity:.9">“</span>${orb(P.sun,'66%','78%','52cqw')}</div>
-      <div class="content mid">
+    const head = useAR
+      ? `<div class="label rv">Claude’s catchphrase of the year</div>
+         <div class="spacer"></div>
+         <p class="say xl" data-fit>${mk('“You’re', .2)}${mk('absolutely', .3)}${mk('right!”', .4)}</p>
+         ${mk(num(ar, 'x', .55), .5, 'num', 'data-fit')}
+         <p class="voice rv" ${dl(1)}>${ar >= 50 ? 'And honestly? You weren’t. Not every time.' : 'Only sometimes were you actually right.'}</p>`
+      : `<div class="label rv">Claude’s punctuation of the year</div>
+         <div class="spacer"></div>
+         <p class="say">${mk('The em dash', .2)}</p>
+         <div class="dash wipe" ${dl(.4)}></div>
+         ${mk(num(CL.emDashes, 'x', .6), .55, 'num', 'data-fit')}
+         <p class="voice rv" ${dl(1.05)}>Claude said “You’re absolutely right!” <b>${fmt(ar)} ${pl(ar, 'time')}.</b> ${ar === 0 ? 'Character development.' : 'Growth.'} The em dashes, however — those stayed.</p>`;
+    S.push({ id:'catch', name:'Catchphrases', dur:8500, theme:th(P.pink, P.ink, P.paper), html:`
+      <div class="deco"><span class="bigquote">“</span></div>
+      <div class="content">
         ${head}
-        <div class="statgrid rise" ${d_(1.3)}>${rows.map(([k, v]) => `<div class="stat"><b>${compact(v)}</b><span>${esc(k)}</span></div>`).join('')}</div>
+        <ul class="tally rv" ${dl(1.35)} style="margin-top:2cqw">${rows.map(([k, v]) => `<li><span>${esc(k)}</span><b>${fmt(v)}</b></li>`).join('')}</ul>
       </div>` });
   }
 
   // 9 · manners
   {
     const nice = W.please + W.thanks + W.praise, mean = W.wtf + W.still + W.broken + W.spicy;
-    const pct = nice + mean ? nice / (nice + mean) * 100 : 50;
+    const pct = nice + mean ? Math.round(nice / (nice + mean) * 100) : 50;
     let v;
     if (!nice && !mean) v = 'All business. No please, no wtf. Respect.';
-    else if (pct >= 80) v = "Certified sweetheart. When the robots rise, you're on the good list.";
+    else if (pct >= 80) v = 'Certified sweetheart. When the robots rise, you’re on the good list.';
     else if (pct >= 50) v = 'Mostly polite. Occasionally unhinged. Very human.';
     else if (pct >= 20) v = 'Chaotic neutral. A please, then a wtf, then a please again.';
-    else v = 'The robots will remember this. 😬';
-    S.push({ id:'manners', dur:8000, theme:theme(P.cream, P.ink, P.pink, P.tomato), html:`
-      <div class="deco">${burst(P.pink,'64%','-12%','46cqw',12,50,38)}${orb(P.lime,'-26%','86%','50cqw')}</div>
-      <div class="content mid">
-        <div class="kicker rise">The vibe check</div>
-        <h2 class="h1 rise" ${d_(.15)}>How you talk<br>to Claude</h2>
-        <div class="vs">
-          <div class="col nice pop" ${d_(.4)}><div class="emo">😇</div>
-            <div class="row"><b>${fmt(W.please)}</b>× please</div><div class="row"><b>${fmt(W.thanks)}</b>× thank you</div><div class="row"><b>${fmt(W.praise)}</b>× “perfect!”</div></div>
-          <div class="col spicy pop" ${d_(.6)}><div class="emo">😤</div>
-            <div class="row"><b>${fmt(W.wtf)}</b>× wtf</div><div class="row"><b>${fmt(W.still + W.broken)}</b>× “still broken”</div><div class="row"><b>${fmt(W.spicy)}</b>× spicy words</div></div>
+    else v = 'The robots will remember this.';
+    const li = (k, n) => `<li><span>${k}</span><b>${fmt(n)}</b></li>`;
+    S.push({ id:'manners', name:'Vibe check', dur:8500, theme:th(P.paper, P.ink, P.pink), html:`
+      <div class="content">
+        <div class="label rv">The vibe check</div>
+        <h2 class="head">${mk('How you talk', .15)}${mk('to Claude', .27)}</h2>
+        <div class="split rv" ${dl(.5)} style="margin-top:2cqw"><i class="n" style="--w:${pct}%"></i><i class="s"></i></div>
+        <div class="splitl rv" ${dl(.6)}><div><b>${pct}%</b><span>nice</span></div><div><b>${100 - pct}%</b><span>spicy</span></div></div>
+        <div class="two rv" ${dl(.9)} style="margin-top:1cqw">
+          <ul class="tally">${li('please', W.please)}${li('thank you', W.thanks)}${li('“perfect!”', W.praise)}</ul>
+          <ul class="tally">${li('wtf', W.wtf)}${li('“still broken”', W.still + W.broken)}${li('spicy words', W.spicy)}</ul>
         </div>
-        <div class="meter rise" ${d_(.8)}><i style="--w:${pct}%"></i></div>
-        <div class="meterlbl rise" ${d_(.8)}><span>😇 ${Math.round(pct)}% nice</span><span>${100 - Math.round(pct)}% spicy 🌶️</span></div>
-        <p class="quip rise" ${d_(1.4)}><b>Verdict:</b> ${esc(v)}</p>
+        <div class="spacer"></div>
+        <div class="label rv" ${dl(1.3)}>Verdict</div>
+        <p class="voice big rv" ${dl(1.4)}>${esc(v)}</p>
       </div>` });
   }
 
@@ -571,205 +766,201 @@ function buildSlides(d) {
   {
     const tp = W.topPhrase;
     let wq;
-    if (W.longestPromptChars >= 4000) wq = `Your longest prompt was <b>${fmt(W.longestPromptChars)} characters.</b> That's not a prompt, that's a PRD.`;
+    if (W.longestPromptChars >= 4000) wq = `Your longest prompt was <b>${fmt(W.longestPromptChars)} characters.</b> That’s not a prompt, that’s a PRD.`;
     else if (W.yelled > 0) wq = `And you YELLED IN ALL CAPS <b>${fmt(W.yelled)} ${pl(W.yelled,'time')}.</b> Claude heard you.`;
     else if (W.sorry > 0) wq = `You apologized to Claude <b>${fmt(W.sorry)} ${pl(W.sorry,'time')}.</b> It forgives you.`;
     else wq = `Your average prompt: <b>${fmt(W.avgPromptChars)} characters.</b> Concise. Mysterious.`;
-    const stats = [[T.interruptions, 'times you hit Esc mid-thought'], [W.continue + W.approve, '“yes” / “continue” / “do it”'], [T.images, 'screenshots sent'], [T.prompts, 'prompts, total']];
-    S.push({ id:'words', dur:8000, theme:theme(P.tomato, P.white, P.sun, P.plum), html:`
-      <div class="deco">${marquee('GREATEST HITS', P.sun, P.ink, '86%', 6, 16)}${orb(P.plum,'66%','-14%','50cqw',{op:.9})}</div>
-      <div class="content mid">
-        <div class="kicker rise">Your greatest hits</div>
-        ${tp ? `<p class="lead rise" ${d_(.15)}>Your most-said word to Claude:</p>
-        <div class="bigphrase pop" data-fit ${d_(.35)}>“${esc(tp.label)}”</div>
-        <p class="h2 rise" ${d_(.7)}>${fmt(tp.count)} ${pl(tp.count,'time')}</p>` : `<p class="h1 rise">A person of few words.</p>`}
-        <div class="statgrid rise" ${d_(1)}>${stats.map(([n, k]) => `<div class="stat"><b>${fmt(n)}</b><span>${esc(k)}</span></div>`).join('')}</div>
-        <p class="quip rise" ${d_(1.4)}>${wq}</p>
-        <div style="height:12cqw"></div>
+    const stats = [[T.prompts, 'prompts sent'], [T.interruptions, 'times you hit Esc mid-thought'], [W.continue + W.approve, '“yes” / “continue” / “do it”'], [T.images, 'screenshots sent']];
+    S.push({ id:'words', name:'Greatest hits', dur:8500, theme:th(P.lilac, P.ink, P.plum), html:`
+      <div class="content">
+        <div class="label rv">Your greatest hits</div>
+        <div class="spacer"></div>
+        ${tp ? `<p class="voice rv" ${dl(.15)}>Your most-said word to Claude:</p>
+        ${mk(`“${esc(tp.label)}”`, .3, 'word', 'data-fit')}
+        <div class="label rv" ${dl(.7)}>Said ${fmt(tp.count)} ${pl(tp.count, 'time')}</div>` : `<p class="head rv">A person of few words.</p>`}
+        <div class="quad rv" ${dl(1)} style="margin-top:3cqw">${stats.map(([n, k]) => `<div><b>${fmt(n)}</b><span>${esc(k)}</span></div>`).join('')}</div>
+        <div class="rule"></div>
+        <p class="voice rv" ${dl(1.4)}>${wq}</p>
       </div>` });
   }
 
   // 11 · calendar
   if (T.activeDays > 0) {
-    const s = tm.longestStreak;
-    const sq = s >= 30 ? 'A month straight. Touch grass? Never heard of it.' : s >= 14 ? "Two weeks straight. Claude's starting to think you live here." : s >= 7 ? 'A full week straight. Claude noticed.' : 'Healthy boundaries. We love that for you.';
-    const bd = tm.busiestDay;
-    S.push({ id:'calendar', dur:8000, theme:theme(P.plum, P.cream, P.lime, P.mint), html:`
-      <div class="deco">${orb(P.violet,'60%','-14%','56cqw',{op:.8})}${burst(P.mint,'72%','90%','40cqw',8,60,32)}</div>
-      <div class="content mid">
-        <div class="kicker rise">Showing up</div>
-        <div class="mega pop a1" data-fit ${d_(.15)}>${num(T.activeDays, 'int', .3)}</div>
-        <p class="h2 rise" ${d_(.4)}>days with Claude</p>
-        ${heatmap(d)}
-        <div class="duo rise" ${d_(1.1)}>
-          <div><b>${fmt(s)}</b><span>day streak, longest</span></div>
-          ${bd ? `<div><b>${fmt(bd.prompts)}</b><span>prompts on ${DAYS[parseDay(bd.date).getDay()].slice(0,3)}, ${niceDate(bd.date)} — your busiest day</span></div>` : ''}
-        </div>
-        <p class="quip rise" ${d_(1.5)}>${esc(sq)}${bd ? ' And whatever happened on ' + esc(niceDate(bd.date)) + '? We don’t want to know.' : ''}</p>
+    const s = tm.longestStreak, bd = tm.busiestDay;
+    const sq = s >= 30 ? 'A month straight. Touch grass? Never heard of it.' : s >= 14 ? 'Two weeks straight. Claude’s starting to think you live here.' : s >= 7 ? 'A full week straight. Claude noticed.' : 'Healthy boundaries. We love that for you.';
+    const meta = [[fmt(s), 'day streak, longest']];
+    if (bd) meta.push([fmt(bd.prompts), `prompts on ${DAYS[parseDay(bd.date).getDay()].slice(0, 3)}, ${niceDate(bd.date)}`]);
+    S.push({ id:'calendar', name:'Showing up', dur:8500, theme:th(P.plum, P.paper, P.lime), html:`
+      <div class="content">
+        <div class="label rv">Showing up</div>
+        <div class="spacer"></div>
+        ${mk(num(T.activeDays, 'int', .3), .15, 'num a1', 'data-fit')}
+        <p class="sub rv" ${dl(.45)}>days with Claude.</p>
+        <div class="rv" ${dl(.6)} style="margin:3cqw 0 1cqw">${heatmap(d)}</div>
+        <div class="meta rv" ${dl(1.2)}>${meta.map(([n, l]) => `<div><b>${n}</b><span>${esc(l)}</span></div>`).join('')}</div>
+        <div class="spacer"></div>
+        <p class="voice rv" ${dl(1.5)}>${esc(sq)}${bd ? ' And whatever happened on ' + esc(niceDate(bd.date)) + '? We don’t want to know.' : ''}</p>
       </div>` });
   }
 
   // 12 · personality
   {
-    const p = d.personality || { id:'vibe', name:'The Vibe Coder', emoji:'✨', tagline:'You came. You prompted. You vibed.', traits:[] };
-    const [c1, c2, c3, fg] = ARCH_COLORS[p.id] || ARCH_COLORS.vibe;
-    S.push({ id:'persona', dur:9500, theme:theme(c1, fg, c3, c2), html:`
-      <div class="deco"><div class="gradbg" style="background-image:linear-gradient(135deg,${c1},${c2},${c3},${c1})"></div></div>
-      ${confetti(36, [P.lime, P.pink, P.sun, P.mint, P.cream, P.violet])}
-      <div class="content center persona">
-        <div class="kicker rise" style="text-align:center">Your Claude personality is…</div>
-        <div class="pemoji pop" ${d_(.9)}><span class="wobble" style="display:inline-block">${esc(p.emoji)}</span></div>
-        <h2 class="pname slam" ${d_(1.35)}>${esc(p.name)}</h2>
-        <p class="quip rise" ${d_(2)}>${esc(p.tagline)}</p>
-        ${p.traits && p.traits.length ? `<div class="chips rise" ${d_(2.5)}>${p.traits.map((t) => `<span class="chip ghost">${esc(t)}</span>`).join('')}</div>` : ''}
+    const p = persona, [bg, fg, ac] = personaWay, lines = nameLines(p.name);
+    S.push({ id:'persona', name:'Personality', dur:10000, theme:th(bg, fg, ac), html:`
+      <div class="deco"><div class="rays"></div></div>
+      <div class="content persona">
+        <div class="label rv">Your Claude personality</div>
+        ${stamp({ ring:`ONE OF SIXTEEN · CLAUDE WRAPPED ${YEAR.toUpperCase()} · `, size:'56cqw', cls:'zoom', style:'--d:.7s;margin:1cqw 0', r:84,
+          disc:`<circle cx="100" cy="100" r="66" fill="${ac}"/>`,
+          center:`<g transform="translate(57 57) scale(.86)">${glyphSVG(p.id, onColor(ac, bg, fg))}</g>` })}
+        <div class="pwrap">
+          <div class="pthe rv" ${dl(1.3)}>The</div>
+          <h2 class="pname" data-fit>${lines.map((l, i) => mk(esc(l), 1.4 + i * .12)).join('')}</h2>
+        </div>
+        <p class="voice rv" ${dl(2.1)}>${esc(p.tagline)}</p>
+        ${p.traits && p.traits.length ? `<div class="tags rv" ${dl(2.5)}>${p.traits.map((t) => `<span class="tag">${esc(t)}</span>`).join('')}</div>` : ''}
       </div>` });
   }
 
   // 13 · share
-  S.push({ id:'share', dur:0, theme:theme(P.ink, P.cream, P.lime, P.pink), html:`
-    <div class="deco">${orb(P.violet,'-30%','-10%','70cqw',{op:.35})}${orb(P.lime,'70%','80%','50cqw',{op:.18})}</div>
-    <div class="content share">
-      <div class="kicker rise">That's a wrap 🎁</div>
-      <div class="cardwrap pop" ${d_(.15)}><img id="cardImg" alt="Your Claude Wrapped summary card"></div>
-      <div class="actions rise" ${d_(.5)}>
-        <button class="btn primary" data-act="save">Save image</button>
-        <button class="btn" data-act="copy">Copy image</button>
-        <button class="btn" data-act="post">Post on 𝕏</button>
-      </div>
-      <div class="opts rise" ${d_(.65)}>
-        <label><input type="checkbox" data-opt="cost" checked> show $ value</label>
-        <button class="linkbtn" data-act="replay">↺ replay</button>
-      </div>
-      <p class="fine rise" ${d_(.8)} style="text-align:center">Copy, then paste it into your post. #ClaudeWrapped</p>
-    </div>`, after: (el) => paintCard(el) });
-
+  {
+    const sw = (key, [c, , k]) => `<button class="way" data-way="${key}" aria-label="${key} colorway" aria-pressed="false" style="--c:${c};--k:${k}"></button>`;
+    const ways = [sw('auto', personaWay)].concat(Object.entries(WAYS).filter(([, w]) => w[0] !== personaWay[0]).map(([k, w]) => sw(k, w)));
+    S.push({ id:'share', name:'Share', dur:0, theme:th(P.ink, P.paper, P.lime), html:`
+      <div class="content share">
+        <div class="label rv">That’s a wrap</div>
+        <div class="cardwrap zoom" ${dl(.15)}><img id="cardImg" alt="Your Claude Wrapped summary card"></div>
+        <div class="ways rv" ${dl(.4)}>${ways.join('')}</div>
+        <div class="actions rv" ${dl(.5)}>
+          <button class="btn primary" data-act="save">Save image</button>
+          <button class="btn" data-act="copy">Copy image</button>
+          <button class="btn" data-act="post">Post on 𝕏</button>
+        </div>
+        <div class="opts rv" ${dl(.65)}>
+          <label><input type="checkbox" data-opt="cost" ${opts.cost ? 'checked' : ''}> show $ value</label>
+          <button class="linkbtn" data-act="replay">↺ replay</button>
+        </div>
+      </div>`, after: (el) => paintCard(el) });
+  }
   return S;
 }
 
-function clockSVG(hours, peak) {
-  const max = Math.max(1, ...hours); let s = '';
-  for (let h = 0; h < 24; h++) {
-    const a = (h / 24) * Math.PI * 2 - Math.PI / 2, r0 = 33, r1 = 33 + 3 + (hours[h] / max) * 55;
-    const p = (r) => [(100 + Math.cos(a) * r).toFixed(2), (100 + Math.sin(a) * r).toFixed(2)];
-    const [x1, y1] = p(r0), [x2, y2] = p(r1);
-    s += `<line class="rbar${h === peak ? ' peak' : ''}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" pathLength="1" style="--i:${h}"/>`;
-  }
-  const lbl = [['12a', 0], ['6a', 6], ['12p', 12], ['6p', 18]].map(([t, h]) => { const a = (h / 24) * Math.PI * 2 - Math.PI / 2; return `<text x="${100 + Math.cos(a) * 21}" y="${100 + Math.sin(a) * 21}">${t}</text>`; }).join('');
-  return `<svg class="clock" viewBox="0 0 200 200" aria-label="Prompts by hour of day">${s}${lbl}</svg>`;
-}
-
-function heatmap(d) {
-  const days = d.time.days || {}; const keys = Object.keys(days).sort();
-  if (!keys.length) return '';
-  const from = parseDay((d.range && d.range.from) || keys[0]), to = parseDay((d.range && d.range.to) || keys[keys.length - 1]);
-  const start = new Date(from); start.setDate(start.getDate() - start.getDay());
-  const vals = Object.values(days).filter(Boolean).sort((a, b) => a - b);
-  const q = (p) => vals[Math.floor(p * (vals.length - 1))];
-  const [t1, t2, t3] = [q(.25), q(.55), q(.85)];
-  let cells = '', n = 0;
-  for (const dt = new Date(start); dt <= to; dt.setDate(dt.getDate() + 1), n++) {
-    const v = days[localDay(dt)] || 0;
-    const lvl = dt < from ? 'pad' : !v ? 'l0' : v <= t1 ? 'l1' : v <= t2 ? 'l2' : v <= t3 ? 'l3' : 'l4';
-    cells += `<i class="${lvl}" style="--i:${n}"></i>`;
-  }
-  const cols = Math.ceil(n / 7);
-  return `<div class="heat" style="--cols:${cols};aspect-ratio:${cols}/7" aria-label="Activity calendar">${cells}</div>`;
-}
-
 // ---------- share card (pure canvas, no libraries) ----------
-const opts = { cost: true };
-let cardCanvas = null;
+const opts = { cost: true, way: 'auto' };
+let cardCanvas = null, grainTile = null;
+function grainOn(x, W, H) {
+  if (!grainTile) {
+    const t = document.createElement('canvas'); t.width = t.height = 200;
+    const g = t.getContext('2d'), im = g.createImageData(200, 200), r = seeded(99);
+    for (let i = 0; i < im.data.length; i += 4) { const v = r(), white = r() > .5; im.data[i] = im.data[i + 1] = im.data[i + 2] = white ? 255 : 0; im.data[i + 3] = v * v * 84; }
+    g.putImageData(im, 0, 0); grainTile = t;
+  }
+  const pat = x.createPattern(grainTile, 'repeat');
+  if (pat.setTransform) pat.setTransform(new DOMMatrix().scale(2));
+  x.save(); x.globalAlpha = .6; x.imageSmoothingEnabled = false; x.fillStyle = pat; x.fillRect(0, 0, W, H); x.restore();
+}
 function drawCard(d) {
-  const W = 1080, H = 1350, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
-  const x = cv.getContext('2d');
-  const SANS = 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
-  const MONO = 'ui-monospace, "SF Mono", Menlo, Consolas, monospace';
-  const EMOJI = '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
-  const F = (w, s, f = SANS) => { x.font = `${w} ${s}px ${f}`; };
+  const W = 1080, H = 1350, M = 72, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const x = cv.getContext('2d'), p = persona;
+  const [bg, fg, ac] = WAYS[opts.way] || personaWay, on = onColor(ac, bg, fg);
+  const F = (w, s, f = SANS, st = '') => { x.font = `${st} ${w} ${s}px ${f}`.trim(); };
+  const sp = (px) => { if ('letterSpacing' in x) x.letterSpacing = px; };
   const fit = (t, maxW, s, min, w = 900, f = SANS) => { for (; s > min; s -= 2) { F(w, s, f); if (x.measureText(t).width <= maxW) return s; } F(w, min, f); return min; };
   const rr = (X, Y, w, h, r) => { x.beginPath(); if (x.roundRect) x.roundRect(X, Y, w, h, r); else { x.moveTo(X + r, Y); x.arcTo(X + w, Y, X + w, Y + h, r); x.arcTo(X + w, Y + h, X, Y + h, r); x.arcTo(X, Y + h, X, Y, r); x.arcTo(X, Y, X + w, Y, r); x.closePath(); } };
-  const star = (cx, cy, ro, ri, n) => { const p = starPts(n, ro, ri, cx, cy); x.beginPath(); p.forEach(([a, b], i) => i ? x.lineTo(a, b) : x.moveTo(a, b)); x.closePath(); };
   const wrap = (text, maxW) => { const out = []; let cur = ''; for (const w of text.split(' ')) { const t = cur ? cur + ' ' + w : w; if (x.measureText(t).width > maxW && cur) { out.push(cur); cur = w; } else cur = t; } if (cur) out.push(cur); return out; };
-  const spaced = (px) => { if ('letterSpacing' in x) x.letterSpacing = px; };
+  const rule = (y) => { x.fillStyle = fg; x.fillRect(M, y, W - 2 * M, 3); };
 
-  // background + shapes
-  x.fillStyle = P.plum; x.fillRect(0, 0, W, H);
-  x.fillStyle = P.lime; x.beginPath(); x.arc(W + 60, 40, 250, 0, Math.PI * 2); x.fill();
-  x.strokeStyle = P.violet; x.lineWidth = 40; x.beginPath(); x.arc(W + 70, 830, 150, 0, Math.PI * 2); x.stroke();
+  x.fillStyle = bg; x.fillRect(0, 0, W, H);
   x.textBaseline = 'alphabetic'; x.textAlign = 'left';
 
-  // header
-  F(900, 66); x.fillStyle = P.lime; spaced('-1px'); x.fillText('CLAUDE WRAPPED', 58, 128);
-  const tw = x.measureText('CLAUDE WRAPPED').width;
-  F(900, 40); const yl = YEAR, pw = x.measureText(yl).width + 50;
-  x.save(); x.translate(58 + tw + 22, 80); x.rotate(-0.09); x.fillStyle = P.pink; rr(0, 0, pw, 62, 31); x.fill();
-  x.fillStyle = P.ink; x.textAlign = 'center'; x.fillText(yl, pw / 2, 45); x.restore(); x.textAlign = 'left';
-  F(700, 24, MONO); spaced('4px'); x.fillStyle = 'rgba(244,239,230,.72)'; x.fillText('MY YEAR IN CLAUDE CODE', 61, 174);
+  // masthead
+  F(700, 25, MONO); sp('5px'); x.fillStyle = fg; x.fillText('CLAUDE WRAPPED', M, 104);
+  x.textAlign = 'right'; x.fillText(YEAR.toUpperCase(), W - M + 5, 104); x.textAlign = 'left';
+  rule(126);
 
-  // hero
-  const p = d.personality;
-  x.fillStyle = P.cream; rr(56, 210, W - 112, 404, 44); x.fill();
-  F(700, 24, MONO); x.fillStyle = 'rgba(11,11,15,.55)'; x.fillText('MY CLAUDE PERSONALITY', 102, 274);
-  spaced('-2px');
-  const name = p.name.toUpperCase(); let lines = [name], s = fit(name, 872, 104, 66);
-  if (x.measureText(name).width > 872) {
-    const words = name.split(' '); let best = [name, ''], bd = Infinity;
-    for (let i = 1; i < words.length; i++) { const a = words.slice(0, i).join(' '), b = words.slice(i).join(' '); if (Math.abs(a.length - b.length) < bd) { bd = Math.abs(a.length - b.length); best = [a, b]; } }
-    lines = best; s = Math.min(fit(best[0], 872, 92, 48), fit(best[1], 872, 92, 48));
+  // label + traits
+  F(600, 20, MONO); sp('4px'); x.fillStyle = rgba(fg, .75); x.fillText('MY CLAUDE PERSONALITY', M, 184);
+  let tx = M, ty = 212; F(600, 18, MONO); sp('3px');
+  for (const t of (p.traits || []).slice(0, 3)) {
+    const lab = t.toUpperCase(), w = x.measureText(lab).width - 3 + 38;
+    if (tx + w > 610 && tx > M) { tx = M; ty += 54; }
+    x.strokeStyle = fg; x.lineWidth = 2.5; rr(tx + 1.5, ty, w, 42, 21); x.stroke();
+    x.fillStyle = fg; x.fillText(lab, tx + 20, ty + 27.5);
+    tx += w + 12;
   }
-  let y = lines.length === 1 ? 438 : 388;
-  x.fillStyle = P.ink;
-  for (const l of lines) { F(900, s); x.fillText(l, 98, y); y += s * 0.94; }
-  spaced('0px'); F(600, 31); x.fillStyle = 'rgba(11,11,15,.78)';
-  let tl = wrap(p.tagline, 860); if (tl.length > 2) { F(600, 27); tl = wrap(p.tagline, 860); }
-  tl.slice(0, 2).forEach((l, i) => x.fillText(l + (i === 1 && tl.length > 2 ? '…' : ''), 102, y + 14 + i * 40));
-  // sticker
-  x.fillStyle = P.pink; star(W - 168, 252, 98, 83, 18); x.fill();
-  x.save(); x.translate(W - 168, 256); x.rotate(-0.12); x.textAlign = 'center'; x.textBaseline = 'middle'; F(400, 92, EMOJI); x.fillText(p.emoji, 0, 6); x.restore();
-  x.textAlign = 'left'; x.textBaseline = 'alphabetic';
 
-  // columns
-  const col = (title, items, X, color) => {
-    F(800, 24, MONO); spaced('4px'); x.fillStyle = color; x.fillText(title, X, 692); spaced('-1px');
+  // seal
+  const cx = W - M - 154, cy = 302;
+  x.fillStyle = ac; x.beginPath(); x.arc(cx, cy, 112, 0, Math.PI * 2); x.fill();
+  glyphCanvas(x, p.id, cx - 74, cy - 74, 1.48, on);
+  const ring = [...`CLAUDE WRAPPED · ${YEAR.toUpperCase()} · `.repeat(2)];
+  F(600, 20, MONO); sp('0px'); x.fillStyle = fg; x.textAlign = 'center';
+  ring.forEach((ch, i) => { x.save(); x.translate(cx, cy); x.rotate(i / ring.length * Math.PI * 2 - .5); x.fillText(ch, 0, -136); x.restore(); });
+  x.textAlign = 'left';
+
+  // name: "The" small in serif, the rest big
+  sp('0px'); F(400, 37, SERIF, 'italic');
+  let tl = wrap(p.tagline, W - 2 * M); if (tl.length > 2) { F(400, 32, SERIF, 'italic'); tl = wrap(p.tagline, W - 2 * M); }
+  const drop = tl.length === 1 ? 44 : 0;
+  const lines = nameLines(p.name); sp('-5px');
+  const s = Math.min(...lines.map((l) => fit(l, W - 2 * M, 152, 72)));
+  const ys = lines.map((_, i) => 668 + drop - (lines.length - 1 - i) * s * .9);
+  x.fillStyle = fg; F(900, s); lines.forEach((l, i) => x.fillText(l, M - s * .035, ys[i]));
+  sp('-1px'); F(400, Math.round(s * .44), SERIF, 'italic'); x.fillText('The', M, ys[0] - s * .8);
+
+  // tagline
+  sp('0px'); F(400, tl.length > 2 ? 32 : 37, SERIF, 'italic');
+  tl.slice(0, 2).forEach((l, i) => x.fillText(l + (i === 1 && tl.length > 2 ? '…' : ''), M, 730 + drop + i * 46));
+  rule(806);
+
+  // lists
+  const col = (title, items, X) => {
+    F(600, 20, MONO); sp('4px'); x.fillStyle = rgba(fg, .75); x.fillText(title, X, 856);
     items.slice(0, 5).forEach((it, i) => {
-      const Y = 752 + i * 60;
-      F(900, 34); x.fillStyle = color; x.fillText(String(i + 1), X, Y);
-      x.fillStyle = P.cream; fit(it, 340, 42, 26, 800); x.fillText(it, X + 50, Y);
+      const Y = 908 + i * 45;
+      F(600, 18, MONO); sp('2px'); x.fillStyle = rgba(fg, .62); x.fillText(pad2(i + 1), X, Y - 3);
+      sp('-1px'); x.fillStyle = fg; fit(it, 380, 36, 24, 700); x.fillText(it, X + 54, Y);
     });
-    spaced('0px');
   };
-  col('TOP TOOLS', d.tools.map((t) => toolName(t.name)), 60, P.lime);
-  col('TOP LANGUAGES', d.languages.map((l) => l.name), 572, P.pink);
+  col('TOP TOOLS', d.tools.map((t) => toolName(t.name)), M);
+  col('TOP LANGUAGES', d.languages.map((l) => l.name), W / 2 + 12);
+  rule(1108);
 
-  // tiles
+  // stats
   const ar = d.claude.absolutelyRight;
-  const tiles = [
-    { bg: P.lime, label: 'MINUTES WITH CLAUDE', value: fmt(d.totals.minutes) },
-    { bg: P.pink, label: 'PEAK HOUR', value: hourLabel(d.time.peakHour) },
-    ar >= 5 ? { bg: P.sun, label: '“YOU’RE ABSOLUTELY RIGHT”', value: '×' + fmt(ar) } : { bg: P.sun, label: 'EM DASHES FROM CLAUDE', value: '×' + fmt(d.claude.emDashes) },
-    opts.cost && d.cost.usd > 0 ? { bg: P.mint, label: 'COMPUTE AT API PRICES', value: money(d.cost.usd) } : { bg: P.mint, label: 'LINES OF CODE WRITTEN', value: compact(d.totals.linesWritten) },
+  const stats = [
+    [fmt(d.totals.minutes), 'MINUTES TOGETHER'],
+    [hourLabel(d.time.peakHour), 'PEAK HOUR'],
+    ar >= 5 ? ['×' + fmt(ar), '“YOU’RE ABSOLUTELY RIGHT”'] : ['×' + fmt(d.claude.emDashes), 'EM DASHES FROM CLAUDE'],
+    opts.cost && d.cost.usd > 0 ? [money(d.cost.usd), 'AT API PRICES'] : [compact(d.totals.linesWritten), 'LINES OF CODE WRITTEN'],
   ];
-  tiles.forEach((t, i) => {
-    const X = 56 + (i % 2) * 494, Y = 1030 + Math.floor(i / 2) * 140;
-    x.fillStyle = t.bg; rr(X, Y, 474, 122, 28); x.fill();
-    F(800, 19, MONO); spaced('3px'); x.fillStyle = 'rgba(11,11,15,.68)'; x.fillText(t.label, X + 28, Y + 40);
-    spaced('-2px'); x.fillStyle = P.ink; fit(t.value, 420, 58, 30); x.fillText(t.value, X + 26, Y + 102); spaced('0px');
+  stats.forEach(([val, lab], i) => {
+    const X = M + i * 237;
+    if (i) { x.fillStyle = rgba(fg, .3); x.fillRect(X - 22, 1136, 2, 92); }
+    sp('-2px'); x.fillStyle = fg; fit(val, 196, 52, 30); x.fillText(val, X - 2, 1184);
+    F(600, 15, MONO); sp('2px'); x.fillStyle = rgba(fg, .75);
+    wrap(lab, 200).slice(0, 2).forEach((l, j) => x.fillText(l, X, 1210 + j * 20));
   });
 
   // footer
-  F(800, 26, MONO); x.fillStyle = 'rgba(244,239,230,.92)'; x.fillText('npx claudewrapped', 60, 1324);
-  x.textAlign = 'right'; F(700, 18, MONO); spaced('2px'); x.fillStyle = 'rgba(244,239,230,.5)';
-  x.fillText(d.demo ? 'SAMPLE DATA · UNOFFICIAL' : 'UNOFFICIAL · MADE 100% LOCALLY', W - 60, 1322);
+  F(700, 24, MONO); sp('0px'); const cmd = 'npx claudewrapped', cw = x.measureText(cmd).width;
+  x.fillStyle = ac; rr(M, 1252, cw + 52, 50, 25); x.fill(); x.fillStyle = on; x.fillText(cmd, M + 26, 1285);
+  x.textAlign = 'right'; F(600, 15, MONO); sp('2px'); x.fillStyle = rgba(fg, .6);
+  x.fillText(d.demo ? 'SAMPLE DATA · UNOFFICIAL' : 'UNOFFICIAL · MADE 100% LOCALLY', W - M + 2, 1283);
+
+  grainOn(x, W, H);
   return cv;
 }
 function paintCard(root) {
   cardCanvas = drawCard(D);
-  const img = (root || document).querySelector('#cardImg');
+  const scope = root || document;
+  const img = scope.querySelector('#cardImg');
   if (img) img.src = cardCanvas.toDataURL('image/png');
+  scope.querySelectorAll('.way').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.way === opts.way)));
 }
 const cardBlob = () => new Promise((res) => cardCanvas.toBlob(res, 'image/png'));
 function tweetText() {
-  const p = D.personality, t = D.tools[0];
+  const p = persona, t = D.tools[0];
   const lines = [`My ${YEAR === 'All-time' ? '' : YEAR + ' '}Claude Wrapped 🎁`, '', `${p.emoji} ${p.name}`, `⏱️ ${fmt(D.totals.minutes)} minutes with Claude`];
   if (t) lines.push(`🔧 Top tool: ${toolName(t.name)}`);
   if (opts.cost && D.cost.usd > 0) lines.push(`💸 ≈${money(D.cost.usd)} of compute`);
@@ -781,23 +972,32 @@ function tweetText() {
 // ---------- player ----------
 const story = document.getElementById('story'), slot = document.getElementById('slot'), barsEl = document.getElementById('bars');
 const pauseBtn = document.getElementById('pauseBtn'), toastEl = document.getElementById('toast');
+const folioL = document.getElementById('folioL'), folioR = document.getElementById('folioR');
 const SLIDES = buildSlides(D);
 let idx = 0, elapsed = 0, last = performance.now(), paused = false, holding = false, noAuto = false;
 document.getElementById('demoChip').hidden = !D.demo;
+document.getElementById('brandYear').textContent = D.year === 'all' ? '' : '’' + YY;
 barsEl.innerHTML = SLIDES.slice(1).map(() => '<div class="bar"><i></i></div>').join('');
 const barFills = [...barsEl.querySelectorAll('.bar > i')];
-const ICONS = { pause: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="4" width="5" height="16" rx="1.5"/><rect x="14" y="4" width="5" height="16" rx="1.5"/></svg>',
+const ICONS = { pause: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4.5" width="4" height="15" rx="1"/><rect x="14" y="4.5" width="4" height="15" rx="1"/></svg>',
   play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5z"/></svg>' };
 
 function setPaused(v) { paused = v; story.classList.toggle('paused', v); pauseBtn.innerHTML = v ? ICONS.play : ICONS.pause; pauseBtn.setAttribute('aria-label', v ? 'Play' : 'Pause'); }
 
+// Shrink oversized display type to its line. Lines are measured at full size, so one pass is exact.
 function fitAll(root) {
   root.querySelectorAll('[data-fit]').forEach((el) => {
-    const counts = [...el.querySelectorAll('[data-count]')];
-    counts.forEach((c) => { c.textContent = FMT[c.dataset.fmt](+c.dataset.count); });
+    el.querySelectorAll('[data-count]').forEach((c) => { c.textContent = FMT[c.dataset.fmt](+c.dataset.count); });
     el.style.fontSize = '';
-    let fs = parseFloat(getComputedStyle(el).fontSize), guard = 0;
-    while (el.scrollWidth > el.clientWidth + 1 && guard++ < 40) { fs *= 0.94; el.style.fontSize = fs + 'px'; }
+    const inner = el.matches('.mk') ? [el.firstElementChild] : [...el.querySelectorAll('.mk > span')];
+    const fs = parseFloat(getComputedStyle(el).fontSize);
+    if (inner.length) {
+      const need = Math.max(...inner.map((s) => s.offsetWidth)), avail = el.clientWidth - fs * .08;
+      if (need > avail) el.style.fontSize = (fs * avail / need * .995) + 'px';
+    } else {
+      let f = fs, guard = 0;
+      while (el.scrollWidth > el.clientWidth + 1 && guard++ < 40) { f *= .95; el.style.fontSize = f + 'px'; }
+    }
   });
 }
 function runCounts(root) {
@@ -805,7 +1005,7 @@ function runCounts(root) {
     const to = +el.dataset.count, f = FMT[el.dataset.fmt] || fmt;
     if (reduced) { el.textContent = f(to); return; }
     el.textContent = f(0);
-    const t0 = performance.now() + (+el.dataset.delay || 0) * 1000, dur = 1500;
+    const t0 = performance.now() + (+el.dataset.delay || 0) * 1000, dur = 1600;
     const tick = (now) => {
       if (!el.isConnected) return;
       const k = Math.min(1, Math.max(0, (now - t0) / dur));
@@ -820,13 +1020,15 @@ function show(i) {
   idx = Math.max(0, Math.min(SLIDES.length - 1, i)); elapsed = 0;
   const s = SLIDES[idx];
   for (const [k, v] of Object.entries(s.theme)) story.style.setProperty('--' + k, v);
-  document.body.style.setProperty('--g1', s.theme.bg); document.body.style.setProperty('--g2', s.theme.a1);
+  document.body.style.setProperty('--g1', lum(s.theme.bg) < .08 ? s.theme.a1 : s.theme.bg);
   const el = document.createElement('section');
   el.className = 'slide'; el.dataset.id = s.id; el.innerHTML = s.html;
   slot.replaceChildren(el);
   fitAll(el); runCounts(el);
   if (s.after) s.after(el);
   barsEl.style.visibility = idx === 0 ? 'hidden' : 'visible';
+  folioL.textContent = s.name;
+  folioR.textContent = idx === 0 ? YEAR : `${pad2(idx)} / ${pad2(SLIDES.length - 1)}`;
   updateBars();
 }
 const next = () => { if (idx < SLIDES.length - 1) show(idx + 1); };
@@ -877,9 +1079,11 @@ document.addEventListener('keydown', (e) => {
 function toast(msg) { toastEl.textContent = msg; toastEl.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => toastEl.classList.remove('on'), 2400); }
 
 story.addEventListener('click', async (e) => {
-  const b = e.target.closest('[data-act]');
   const opt = e.target.closest('[data-opt]');
   if (opt) { opts[opt.dataset.opt] = opt.checked; paintCard(); return; }
+  const way = e.target.closest('[data-way]');
+  if (way) { e.stopPropagation(); opts.way = way.dataset.way; paintCard(); return; }
+  const b = e.target.closest('[data-act]');
   if (!b) return;
   e.stopPropagation();
   const act = b.dataset.act;
@@ -889,16 +1093,16 @@ story.addEventListener('click', async (e) => {
     const url = URL.createObjectURL(await cardBlob());
     const a = Object.assign(document.createElement('a'), { href: url, download: `claude-wrapped-${YEAR.toLowerCase()}.png` });
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 4000);
-    return toast('Saved! Now go post it. 🎁');
+    return toast('Saved. Now go post it.');
   }
   if (act === 'copy') {
-    try { await navigator.clipboard.write([new ClipboardItem({ 'image/png': cardBlob() })]); toast('Copied! Paste it into your post.'); }
-    catch { try { await navigator.clipboard.write([new ClipboardItem({ 'image/png': await cardBlob() })]); toast('Copied! Paste it into your post.'); } catch { toast('Copy isn’t allowed here. Use Save image.'); } }
+    try { await navigator.clipboard.write([new ClipboardItem({ 'image/png': cardBlob() })]); toast('Copied. Paste it into your post.'); }
+    catch { try { await navigator.clipboard.write([new ClipboardItem({ 'image/png': await cardBlob() })]); toast('Copied. Paste it into your post.'); } catch { toast('Copy isn’t allowed here. Use Save image.'); } }
     return;
   }
   if (act === 'post') {
     window.open('https://x.com/intent/post?text=' + encodeURIComponent(tweetText()), '_blank', 'noopener');
-    return toast('Tip: paste the image into the post 📋');
+    return toast('Tip: paste the image into the post');
   }
 });
 
@@ -933,10 +1137,17 @@ function makeDemo() {
   };
 }
 
-const jump = /^#(\d+)$/.exec(location.hash); // #5 → open slide 5 without auto-advance (handy for screenshots)
+// #5 → open slide 5 without auto-advance (handy for screenshots)
+const jump = /^#(\d+)$/.exec(location.hash);
 noAuto = !!jump;
 setPaused(false);
 show(jump ? +jump[1] : 0);
+if (location.hash === '#marks') { // contact sheet of all 16 marks
+  noAuto = true;
+  slot.innerHTML = `<section class="slide" style="background:${P.ink};color:${P.paper}"><div class="content"><div class="label">The sixteen</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:2.4cqw">${Object.entries(ARCH).map(([id, [bg, fg, ac]]) =>
+      `<div style="background:${bg};color:${fg};aspect-ratio:1;display:grid;place-items:center;position:relative"><svg viewBox="0 0 200 200" style="width:86%"><circle cx="100" cy="100" r="78" fill="${ac}"/><g transform="translate(50 50)">${glyphSVG(id, onColor(ac, bg, fg))}</g></svg><span class="fine" style="position:absolute;left:1.4cqw;bottom:.8cqw;font-size:1.9cqw;opacity:.9">${id}</span></div>`).join('')}</div></div></section>`;
+}
 requestAnimationFrame((t) => { last = t; loop(t); });
 })();
 </script>
