@@ -1,0 +1,11 @@
+# generated Wrapped pages (contain real stats)
+out/
+*.png
+claude-wrapped-*.html
+
+# local only
+LAUNCH.md
+.claude/
+.DS_Store
+node_modules/
+*.tgz

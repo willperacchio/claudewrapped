@@ -1,0 +1,944 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Claude Wrapped</title>
+<meta name="description" content="Your year in Claude Code, Spotify Wrapped style. Computed 100% locally.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎁</text></svg>">
+<style>
+:root{
+  --plum:#1A0B2E;--lime:#CCFF3D;--pink:#FF5FA2;--violet:#6B4EFF;--cobalt:#1F3BFF;--mint:#3DF5C0;
+  --sun:#FFC93D;--tomato:#FF4D2E;--clay:#D97757;--cream:#F4EFE6;--ink:#0B0B0F;--white:#FFF8EE;
+  --display:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI Variable Display","Segoe UI",Inter,Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  --g1:var(--plum);--g2:var(--lime);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:#07060B;color:var(--cream);font-family:var(--display);-webkit-font-smoothing:antialiased;overflow:hidden;
+  -webkit-tap-highlight-color:transparent}
+#glow{position:fixed;inset:-10%;pointer-events:none;opacity:.42;filter:blur(50px);
+  background:radial-gradient(45vmax 45vmax at 18% 22%,var(--g1),transparent 70%),radial-gradient(45vmax 45vmax at 82% 78%,var(--g2),transparent 70%)}
+#stage{position:fixed;inset:0;display:grid;place-items:center}
+#story{--bg:var(--plum);--fg:var(--cream);--a1:var(--lime);--a2:var(--pink);
+  position:relative;width:min(100vw,calc((100dvh - 48px) * 9 / 16),540px);aspect-ratio:9/16;border-radius:28px;overflow:hidden;
+  background:var(--bg);color:var(--fg);container-type:inline-size;font-size:4cqw;
+  box-shadow:0 40px 140px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.06);transition:background-color .45s,color .45s;
+  user-select:none;-webkit-user-select:none;touch-action:manipulation;cursor:pointer}
+@media (max-width:560px){#story{width:100vw;height:100dvh;aspect-ratio:auto;border-radius:0}}
+
+/* chrome */
+.bars{position:absolute;top:3.4cqw;left:4cqw;right:4cqw;display:flex;gap:1.1cqw;z-index:20}
+.bar{flex:1;height:.75cqw;min-height:3px;border-radius:9px;background:color-mix(in srgb,var(--fg) 26%,transparent);overflow:hidden}
+.bar>i{display:block;height:100%;width:0;background:var(--fg)}
+.top{position:absolute;top:6.4cqw;left:4.2cqw;right:3cqw;display:flex;align-items:center;gap:2cqw;z-index:20;
+  font:800 2.9cqw/1 var(--mono);letter-spacing:.14em;text-transform:uppercase}
+.top .demo{background:var(--fg);color:var(--bg);padding:.9cqw 1.8cqw;border-radius:99px;letter-spacing:.08em}
+.top .sp{flex:1}
+.ibtn{appearance:none;border:0;background:transparent;color:inherit;width:9cqw;height:9cqw;display:grid;place-items:center;cursor:pointer;border-radius:50%}
+.ibtn svg{width:4.2cqw;height:4.2cqw}
+.ibtn:focus-visible,.btn:focus-visible,.cta:focus-visible{outline:3px solid var(--a1);outline-offset:3px}
+
+/* slides */
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;padding:18cqw 7cqw 9cqw;animation:slideIn .5s cubic-bezier(.2,.8,.2,1)}
+@keyframes slideIn{from{opacity:0;transform:scale(1.035)}}
+.deco{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:0}
+.content{position:relative;z-index:2;display:flex;flex-direction:column;gap:2.8cqw;flex:1;min-height:0}
+.content.center{justify-content:center}
+.content.mid{justify-content:center}
+.spacer{flex:1}
+
+.kicker{font:800 3cqw/1.25 var(--mono);letter-spacing:.15em;text-transform:uppercase}
+.lead{font-weight:750;font-size:6cqw;line-height:1.08;letter-spacing:-.025em}
+.mega{font-weight:900;font-size:25cqw;line-height:.84;letter-spacing:-.06em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.h1{font-weight:900;font-size:13.5cqw;line-height:.88;letter-spacing:-.05em}
+.h2{font-weight:850;font-size:8.4cqw;line-height:.95;letter-spacing:-.04em}
+.quip{font-weight:650;font-size:4.5cqw;line-height:1.28;letter-spacing:-.01em;text-wrap:pretty}
+.quip b{font-weight:850}
+.fine{font:600 2.65cqw/1.45 var(--mono);opacity:.72;letter-spacing:.01em}
+.a1{color:var(--a1)}.a2{color:var(--a2)}
+.chips{display:flex;flex-wrap:wrap;gap:1.8cqw}
+.chip{display:inline-flex;align-items:center;gap:1.2cqw;padding:1.7cqw 3.2cqw;border-radius:99px;background:var(--fg);color:var(--bg);
+  font-weight:800;font-size:3.5cqw;white-space:nowrap}
+.chip.ghost{background:transparent;color:var(--fg);box-shadow:inset 0 0 0 .55cqw var(--fg)}
+
+/* motion */
+.rise{opacity:0;transform:translateY(5cqw);animation:rise .7s cubic-bezier(.2,.9,.2,1) forwards;animation-delay:var(--d,0s)}
+@keyframes rise{to{opacity:1;transform:none}}
+.pop{opacity:0;transform:scale(.55) rotate(-5deg);animation:pop .85s cubic-bezier(.2,1.5,.35,1) forwards;animation-delay:var(--d,0s)}
+@keyframes pop{to{opacity:1;transform:none}}
+.slam{opacity:0;animation:slam .7s cubic-bezier(.2,1.2,.3,1) forwards;animation-delay:var(--d,0s)}
+@keyframes slam{0%{opacity:0;transform:scale(2.4) rotate(4deg)}55%{opacity:1;transform:scale(.94)}100%{opacity:1;transform:none}}
+.wobble{animation:wobble 3.2s ease-in-out infinite}
+@keyframes wobble{50%{transform:rotate(-3deg) scale(1.03)}}
+#story.paused .slide *,#story.held .slide *{animation-play-state:paused!important}
+
+/* decorations */
+.orb{position:absolute;border-radius:50%;animation:drift 9s ease-in-out infinite alternate}
+@keyframes drift{to{transform:translate(var(--dx,6cqw),var(--dy,-5cqw)) scale(1.12)}}
+.burst{position:absolute;animation:spin 40s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ring{position:absolute;border-radius:50%;animation:breathe 5s ease-in-out infinite}
+@keyframes breathe{50%{transform:scale(1.08)}}
+.marquee{position:absolute;left:-25%;width:150%;transform:rotate(var(--rot,-8deg));overflow:hidden;white-space:nowrap;
+  font-weight:900;font-size:7cqw;letter-spacing:-.02em;padding:1.6cqw 0;line-height:1}
+.marquee div{display:inline-block;animation:marq 14s linear infinite}
+@keyframes marq{to{transform:translateX(-50%)}}
+.dots{position:absolute;inset:0;background-image:radial-gradient(color-mix(in srgb,var(--a1) 40%,transparent) 1.1px,transparent 1.4px);background-size:5cqw 5cqw;opacity:.35}
+.codelines{position:absolute;right:-14%;top:9%;width:62%;display:flex;flex-direction:column;gap:2.5cqw;transform:rotate(-12deg)}
+.codelines i{display:block;height:3.1cqw;border-radius:9px;animation:slideL 1s cubic-bezier(.2,.9,.2,1) both}
+@keyframes slideL{from{transform:translateX(70%);opacity:0}}
+.bigquote{position:absolute;font-weight:900;line-height:.7;font-size:95cqw;font-family:Georgia,"Times New Roman",serif}
+.confetti i{position:absolute;top:-6%;width:2.2cqw;height:3.8cqw;border-radius:2px;animation:fall linear infinite}
+@keyframes fall{to{transform:translate(var(--sx,0),205cqw) rotate(var(--r,720deg))}}
+.gradbg{position:absolute;inset:0;background-size:280% 280%;animation:hue 9s ease-in-out infinite alternate}
+@keyframes hue{0%{background-position:0% 30%}100%{background-position:100% 70%}}
+
+/* intro */
+.title{position:relative;font-weight:900;font-size:21cqw;line-height:.82;letter-spacing:-.065em;margin:1cqw 0 2cqw}
+.title .w{color:var(--a1)}
+.yr{position:absolute;right:-1cqw;bottom:-8cqw;background:var(--a2);color:var(--ink);font-size:6.4cqw;letter-spacing:-.03em;padding:1.4cqw 3cqw;border-radius:99px;
+  transform:rotate(9deg);line-height:1;animation:wobble 3s ease-in-out infinite}
+.cta{appearance:none;border:0;cursor:pointer;background:var(--a1);color:var(--ink);font:900 5.4cqw/1 var(--display);letter-spacing:-.02em;
+  padding:4.2cqw 7.5cqw;border-radius:99px;align-self:flex-start;box-shadow:0 1.3cqw 0 #6f8c12;transition:transform .15s,box-shadow .15s}
+.cta:hover{transform:translateY(-2px) rotate(-1.5deg)}
+.cta:active{transform:translateY(1.1cqw);box-shadow:0 .2cqw 0 #6f8c12}
+
+/* clock */
+.clock{width:74cqw;margin:0 auto;display:block;overflow:visible}
+.rbar{stroke:color-mix(in srgb,var(--fg) 45%,transparent);stroke-width:5.6;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;
+  animation:draw .65s cubic-bezier(.2,.9,.2,1) forwards;animation-delay:calc(var(--i) * 32ms + .35s)}
+.rbar.peak{stroke:var(--a1)}
+@keyframes draw{to{stroke-dashoffset:0}}
+.clock text{font:800 9px var(--mono);fill:var(--fg);opacity:.7;text-anchor:middle;dominant-baseline:middle}
+
+/* ranks */
+.rank{list-style:none;display:flex;flex-direction:column;gap:.6cqw;margin-top:1cqw}
+.rank li{display:grid;grid-template-columns:9cqw 1fr auto;align-items:baseline;gap:2cqw;padding:2.3cqw 0;
+  border-bottom:.45cqw solid color-mix(in srgb,var(--fg) 20%,transparent)}
+.rank .rn{font-weight:900;font-size:6.6cqw;letter-spacing:-.04em}
+.rank .nm{font-weight:850;font-size:6.6cqw;letter-spacing:-.035em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rank .ct{font:800 2.9cqw var(--mono);opacity:.7;white-space:nowrap}
+.rank li.first{background:var(--a1);color:var(--a2);border:0;border-radius:4.5cqw;padding:4cqw 4cqw;margin-bottom:1.4cqw;
+  grid-template-columns:auto 1fr;row-gap:1cqw;transform:rotate(-1.5deg)}
+.rank li.first .rn,.rank li.first .nm{font-size:12cqw;line-height:.9}
+.rank li.first .ct{grid-column:1/-1;opacity:.85}
+
+/* languages */
+.sticker{position:relative;width:74cqw;aspect-ratio:1;display:grid;place-items:center;margin:0 auto}
+.sticker svg{position:absolute;inset:0;width:100%;height:100%;animation:spin 36s linear infinite}
+.sticker span{position:relative;font-weight:900;font-size:11.5cqw;letter-spacing:-.05em;color:var(--ink);transform:rotate(-8deg);text-align:center;line-height:.9;max-width:62cqw;overflow-wrap:anywhere}
+.pills{display:flex;flex-wrap:wrap;gap:2cqw;justify-content:center}
+.pill{padding:1.8cqw 3.6cqw;border-radius:99px;box-shadow:inset 0 0 0 .55cqw var(--fg);font-weight:800;font-size:4.2cqw;white-space:nowrap}
+.pill:nth-child(odd){transform:rotate(-3deg)}.pill:nth-child(even){transform:rotate(2.5deg)}
+.pill b{color:var(--a1);margin-right:1cqw}
+
+/* terminal */
+.term{background:#15151D;border-radius:3.4cqw;box-shadow:0 0 0 .4cqw #2A2A36,0 4cqw 10cqw rgba(0,0,0,.45);overflow:hidden;font:650 3.3cqw/1.45 var(--mono);color:#E9E9EF}
+.term-head{display:flex;gap:1.4cqw;align-items:center;padding:2.3cqw 3.2cqw;background:#1F1F2A}
+.term-head i{width:2.6cqw;height:2.6cqw;border-radius:50%;background:#FF5F57}
+.term-head i:nth-child(2){background:#FEBC2E}.term-head i:nth-child(3){background:#28C840}
+.term-head span{margin-left:auto;opacity:.45;font-size:2.7cqw}
+.term-body{padding:3cqw 3.4cqw 3.6cqw}
+.tp{color:var(--a1);margin-bottom:1.2cqw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tr{display:grid;grid-template-columns:17cqw 1fr 11cqw;align-items:center;gap:2.2cqw;margin-top:1cqw}
+.tr .bb{height:2.3cqw;background:#262633;border-radius:9px;overflow:hidden}
+.tr .bb b{display:block;height:100%;width:var(--w);background:var(--a1);border-radius:9px;transform-origin:left;animation:grow .9s cubic-bezier(.2,.9,.2,1) both;animation-delay:var(--d)}
+.tr .tc{text-align:right;opacity:.7}
+@keyframes grow{from{transform:scaleX(0)}}
+.danger{display:flex;gap:1.8cqw;flex-wrap:wrap}
+.danger span{font:800 3.3cqw var(--mono);padding:1.6cqw 2.8cqw;border-radius:2cqw;background:color-mix(in srgb,var(--a2) 22%,transparent);color:var(--a2);box-shadow:inset 0 0 0 .4cqw var(--a2)}
+.danger span.zero{opacity:.55}
+
+/* tokens */
+.tok{display:flex;align-items:baseline;gap:2.4cqw;flex-wrap:wrap}
+.tok .h1{font-size:15cqw}
+.costcard{background:var(--a1);color:var(--bg);border-radius:5cqw;padding:5cqw 5.4cqw;transform:rotate(-2deg);display:flex;flex-direction:column;gap:2cqw;margin-top:1cqw}
+.costcard .mega{font-size:21cqw}
+
+/* manners */
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:3cqw}
+.vs .col{border-radius:5cqw;padding:4cqw;display:flex;flex-direction:column;gap:2.2cqw}
+.vs .nice{background:var(--a1);color:var(--ink);transform:rotate(-1.5deg)}
+.vs .spicy{background:var(--ink);color:var(--cream);transform:rotate(1.5deg)}
+.vs .emo{font-size:10cqw;line-height:1}
+.vs .row{font-weight:700;font-size:3.7cqw;line-height:1.1}
+.vs .row b{font-weight:900;font-size:8cqw;display:block;letter-spacing:-.045em;line-height:.95}
+.meter{height:4.2cqw;border-radius:99px;background:var(--ink);overflow:hidden;display:flex}
+.meter i{display:block;height:100%;width:var(--w);background:var(--a1);transform-origin:left;animation:grow 1.3s .9s cubic-bezier(.2,.9,.2,1) both}
+.meterlbl{display:flex;justify-content:space-between;font:800 2.8cqw var(--mono);letter-spacing:.08em;text-transform:uppercase;margin-top:-1cqw}
+
+/* words */
+.statgrid{display:grid;grid-template-columns:1fr 1fr;gap:2.4cqw}
+.stat{background:color-mix(in srgb,var(--ink) 20%,transparent);border-radius:4cqw;padding:3.4cqw 3.6cqw}
+.stat b{display:block;font-weight:900;font-size:8.6cqw;letter-spacing:-.045em;line-height:1}
+.stat span{display:block;font-weight:700;font-size:3.2cqw;line-height:1.2;opacity:.92;margin-top:.8cqw}
+.bigphrase{font-weight:900;font-size:16cqw;line-height:.9;letter-spacing:-.055em;color:var(--a1);white-space:nowrap}
+
+/* calendar */
+.heat{display:grid;grid-template-rows:repeat(7,1fr);grid-auto-flow:column;grid-auto-columns:1fr;gap:min(.75cqw,4px);
+  width:min(100%,calc(var(--cols) * 7cqw));aspect-ratio:calc(var(--cols) / 7)}
+.heat i{border-radius:22%;background:color-mix(in srgb,var(--fg) 11%,transparent);opacity:0;animation:cell .4s ease-out forwards;animation-delay:calc(var(--i) * 3.5ms + .4s)}
+.heat i.l1{background:color-mix(in srgb,var(--a1) 32%,transparent)}
+.heat i.l2{background:color-mix(in srgb,var(--a1) 55%,transparent)}
+.heat i.l3{background:color-mix(in srgb,var(--a1) 80%,transparent)}
+.heat i.l4{background:var(--a1);box-shadow:0 0 1.6cqw color-mix(in srgb,var(--a1) 70%,transparent)}
+.heat i.pad{visibility:hidden}
+@keyframes cell{from{opacity:0;transform:scale(.3)}to{opacity:1;transform:none}}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:3cqw}
+.duo div{border-top:.6cqw solid var(--a1);padding-top:2.2cqw}
+.duo b{display:block;font-weight:900;font-size:10cqw;letter-spacing:-.05em;line-height:1}
+.duo span{display:block;font-weight:700;font-size:3.4cqw;line-height:1.2;opacity:.9;margin-top:1cqw}
+
+/* personality */
+.pemoji{font-size:31cqw;line-height:1;text-align:center;filter:drop-shadow(0 2cqw 0 rgba(0,0,0,.16))}
+.pname{font-weight:900;font-size:14cqw;line-height:.86;letter-spacing:-.055em;text-align:center;text-wrap:balance}
+.persona .quip{text-align:center;max-width:none}
+.persona .chips{justify-content:center}
+
+/* share */
+.share{gap:3cqw;align-items:center;justify-content:center}
+.cardwrap{width:74cqw;aspect-ratio:4/5;border-radius:3cqw;overflow:hidden;box-shadow:0 5cqw 12cqw rgba(0,0,0,.55),0 0 0 .3cqw rgba(255,255,255,.08);background:#1A0B2E}
+.cardwrap img{width:100%;height:100%;display:block}
+.actions{display:flex;gap:2cqw;justify-content:center;flex-wrap:wrap}
+.btn{appearance:none;border:0;cursor:pointer;font:800 3.7cqw/1 var(--display);padding:3.2cqw 4.6cqw;border-radius:99px;background:#2A2934;color:var(--cream);transition:transform .12s}
+.btn:hover{transform:translateY(-2px)}
+.btn.primary{background:var(--lime);color:var(--ink)}
+.opts{display:flex;gap:4cqw;align-items:center;font:700 2.9cqw var(--mono);opacity:.85}
+.opts label{display:flex;gap:1.4cqw;align-items:center;cursor:pointer}
+.opts input{accent-color:var(--lime);width:3.4cqw;height:3.4cqw}
+.linkbtn{appearance:none;border:0;background:none;color:inherit;font:inherit;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.toast{position:absolute;left:50%;bottom:6cqw;transform:translate(-50%,8cqw);opacity:0;z-index:30;background:var(--cream);color:var(--ink);
+  font:800 3.4cqw var(--display);padding:2.8cqw 4.6cqw;border-radius:99px;transition:.3s cubic-bezier(.2,.9,.2,1);pointer-events:none;white-space:nowrap}
+.toast.on{transform:translate(-50%,0);opacity:1}
+.hint{position:absolute;bottom:3cqw;left:0;right:0;text-align:center;font:700 2.5cqw var(--mono);opacity:.45;z-index:20;letter-spacing:.06em}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;animation-delay:0s!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+<div id="glow"></div>
+<div id="stage">
+  <main id="story" aria-live="polite" aria-label="Claude Wrapped story">
+    <div class="bars" id="bars"></div>
+    <div class="top">
+      <span id="brand">Claude Wrapped</span><span class="demo" id="demoChip" hidden>Sample data</span>
+      <span class="sp"></span>
+      <button class="ibtn" id="pauseBtn" aria-label="Pause"></button>
+    </div>
+    <div id="slot"></div>
+    <div class="toast" id="toast"></div>
+  </main>
+</div>
+<script>window.__WRAPPED__ = /*__WRAPPED_DATA__*/null;</script>
+<script>
+(() => {
+'use strict';
+
+// ---------- palette ----------
+const P = { plum:'#1A0B2E', lime:'#CCFF3D', pink:'#FF5FA2', violet:'#6B4EFF', cobalt:'#1F3BFF', mint:'#3DF5C0',
+  sun:'#FFC93D', tomato:'#FF4D2E', clay:'#D97757', cream:'#F4EFE6', ink:'#0B0B0F', white:'#FFF8EE' };
+
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// ---------- formatting ----------
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+const fmt = (n) => Math.round(n || 0).toLocaleString('en-US');
+const compact = (n) => {
+  n = Math.round(n || 0);
+  const u = [[1e12,'T'],[1e9,'B'],[1e6,'M'],[1e3,'K']];
+  for (const [v, s] of u) if (n >= v) { const x = n / v; return (x >= 100 ? Math.round(x) : x >= 10 ? x.toFixed(1) : x.toFixed(2)).toString().replace(/\.?0+$/, '') + s; }
+  return String(n);
+};
+const money = (n) => n >= 100 ? '$' + fmt(n) : '$' + (n || 0).toFixed(2);
+const FMT = { int: fmt, compact, money, x: (n) => '×' + fmt(n) };
+const hourLabel = (h) => `${h % 12 || 12} ${h < 12 ? 'AM' : 'PM'}`;
+const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const parseDay = (s) => new Date(s + 'T12:00:00');
+const niceDate = (s) => { const d = parseDay(s); return `${MONTHS[d.getMonth()]} ${d.getDate()}`; };
+const localDay = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const pl = (n, one, many) => (n === 1 ? one : (many || one + 's'));
+const num = (n, f = 'int', delay = .35) => `<span data-count="${+n || 0}" data-fmt="${f}" data-delay="${delay}">${FMT[f](0)}</span>`;
+const d_ = (s) => `style="--d:${s}s"`;
+
+// ---------- decorations ----------
+function starPts(n, ro, ri, cx = 50, cy = 50) {
+  const pts = [];
+  for (let i = 0; i < n * 2; i++) { const r = i % 2 ? ri : ro; const a = Math.PI * i / n - Math.PI / 2; pts.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]); }
+  return pts;
+}
+const starPath = (n = 14, ro = 50, ri = 40) => 'M' + starPts(n, ro, ri).map((p) => p.map((v) => v.toFixed(2)).join(',')).join('L') + 'Z';
+const orb = (c, l, t, s, o = {}) => `<i class="orb" style="background:${c};left:${l};top:${t};width:${s};height:${s};--dx:${o.dx||'6cqw'};--dy:${o.dy||'-5cqw'};animation-duration:${o.t||9}s;opacity:${o.op||1}"></i>`;
+const burst = (c, l, t, s, n = 14, spin = 40, ri = 40, rev = false) => `<svg class="burst" viewBox="0 0 100 100" style="left:${l};top:${t};width:${s};height:${s};animation-duration:${spin}s;${rev?'animation-direction:reverse':''}"><path fill="${c}" d="${starPath(n, 50, ri)}"/></svg>`;
+const ring = (c, l, t, s, w = 5) => `<i class="ring" style="left:${l};top:${t};width:${s};height:${s};box-shadow:inset 0 0 0 ${w}cqw ${c}"></i>`;
+const marquee = (text, bg, fg, top, rot = -8, dur = 14) => {
+  const t = esc((text + '  ✦  ').repeat(10));
+  return `<div class="marquee" style="top:${top};--rot:${rot}deg;background:${bg};color:${fg}"><div style="animation-duration:${dur}s">${t}${t}</div></div>`;
+};
+function seeded(seed) { let s = seed >>> 0 || 1; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
+function codeLines(n, colors) {
+  const r = seeded(7); let s = '';
+  for (let i = 0; i < n; i++) s += `<i style="width:${22 + r() * 62}%;margin-left:${Math.floor(r() * 4) * 7}%;background:${colors[i % colors.length]};animation-delay:${i * 55}ms"></i>`;
+  return `<div class="codelines">${s}</div>`;
+}
+function confetti(n, colors) {
+  const r = seeded(42); let s = '';
+  for (let i = 0; i < n; i++) s += `<i style="left:${r() * 100}%;background:${colors[i % colors.length]};animation-duration:${3.2 + r() * 3.5}s;animation-delay:${-r() * 6}s;--sx:${(r() - .5) * 30}cqw;--r:${(r() > .5 ? 1 : -1) * (360 + r() * 720)}deg;${r() > .6 ? 'border-radius:50%;height:2.2cqw' : ''}"></i>`;
+  return `<div class="deco confetti">${s}</div>`;
+}
+
+// ---------- data (your stats, injected by the CLI — or sample data) ----------
+const D = window.__WRAPPED__ || makeDemo();
+const YEAR = D.year === 'all' ? 'All-time' : String(D.year);
+
+// ---------- copy ----------
+const TOOL_NAMES = { Agent:'Subagents', MCP:'MCP tools', Todos:'Todo lists', 'Ask You':'Questions for you', 'Plan Mode':'Plan mode', SendUserFile:'Send file', 'Computer Use':'Computer use' };
+const toolName = (t) => TOOL_NAMES[t] || t;
+const TOOL_QUIP = {
+  Bash:'Why use many tool when Bash do trick.', Read:'Claude read more this year than most book clubs.',
+  Edit:'Edit, edit, edit. A perfectionist, clearly.', Write:'From scratch, every time. Bold.',
+  Grep:'Professional needle-in-a-haystack finder.', Glob:'Pattern-matching royalty.',
+  Browser:'Claude touched grass. The internet kind.', WebFetch:"Claude read the docs so you didn't have to.",
+  WebSearch:"Claude Googled so you didn't have to.", Agent:'Middle management, but for robots.',
+  MCP:'Plugged into everything. A very connected individual.', Todos:'A list-maker. Claude respects the hustle.',
+};
+const PROSE = new Set(['Markdown','JSON','YAML','TOML','XML','CSV','Plain Text','PDF','Images','SVG']);
+const LANG_QUIP = {
+  TypeScript:'You like your JavaScript with a seatbelt.', JavaScript:'No types. No fear.',
+  Python:'Whitespace-sensitive. Emotionally, too.', Rust:"Blazingly fast. You'll tell everyone.",
+  Go:'if err != nil { /* you, all year */ }', Swift:"Xcode crashed. You didn't.", Kotlin:'Java, but make it fashion.',
+  Java:'AbstractWrappedYearFactoryBean.', Ruby:'Optimized for developer happiness. Are you happy?',
+  PHP:'Still powering half the internet. Respect.', 'C++':'Undefined behavior. Very defined personality.',
+  C:'Manual memory management. Manual everything.', 'C#':"Microsoft's favorite child. And yours.",
+  HTML:'HyperText Markup Lover.', CSS:'You centered a div. We all saw it.', Shell:'One rm -rf away from greatness.',
+  SQL:"SELECT * FROM year WHERE vibes = 'immaculate';", Jupyter:'Cells within cells within cells.',
+  Dart:'Flutter fan detected.', Elixir:'Let it crash. (It did.)', Lua:'Quietly powering every game mod ever.',
+  Svelte:'Less framework, more vibes.', Vue:'Progressive. In every sense.', Terraform:'Infrastructure as code. Chaos as a service.',
+  Zig:'Hipster systems programmer. Respect.', Haskell:'A monad is just a… never mind.', Markdown:'Not a coder. A novelist with a terminal.',
+  JSON:'You think in curly braces.', YAML:'Indentation-driven development.',
+};
+const ARCH_COLORS = { // [c1, c2, c3, fg]
+  night:['#0E0B3D','#3B2AFF','#FF5FA2',P.cream], dawn:['#FF7A45','#FFC93D','#FF5FA2',P.ink], weekend:['#3DF5C0','#1F3BFF','#CCFF3D',P.ink],
+  polite:['#FFD6E8','#F4EFE6','#CCFF3D',P.ink], rage:['#FF4D2E','#7A0A1F','#FFC93D',P.white], esc:['#1A0B2E','#6B4EFF','#3DF5C0',P.cream],
+  rubber:['#CCFF3D','#3DF5C0','#FFC93D',P.ink], novelist:['#D97757','#6B2E1F','#FFC93D',P.white], haiku:['#3DF5C0','#CCFF3D','#F4EFE6',P.ink],
+  bash:['#0B0B0F','#1F3BFF','#3DF5C0',P.cream], delegator:['#6B4EFF','#FF5FA2','#FFC93D',P.white], marathon:['#FF5FA2','#FF4D2E','#FFC93D',P.ink],
+  parallel:['#6B4EFF','#1A0B2E','#3DF5C0',P.cream], visual:['#FFC93D','#FF5FA2','#6B4EFF',P.ink], surfer:['#1F3BFF','#3DF5C0','#F4EFE6',P.ink],
+  vibe:['#FF5FA2','#6B4EFF','#3DF5C0',P.white],
+};
+
+function minutesQuip(m) {
+  const lotr = 686; // LOTR extended trilogy, in minutes
+  if (m < 60) return 'Short and sweet. Like a good commit message.';
+  if (m < lotr) return `That's ${Math.round(m / lotr * 100)}% of the Lord of the Rings extended trilogy. Keep going, Frodo.`;
+  return `That's the Lord of the Rings extended trilogy <b>${fmt(m / lotr)}×</b> over. One does not simply stop prompting.`;
+}
+function hourQuip(h) {
+  if (h <= 4) return 'Nothing good happens after 2 AM. Except, apparently, your code.';
+  if (h <= 8) return 'Up before standup. Up before coffee. Up before the bugs.';
+  if (h <= 11) return 'A morning person. Suspiciously well-adjusted.';
+  if (h <= 13) return 'Lunch break? Never heard of it.';
+  if (h <= 17) return 'Peak afternoon productivity. Your manager would be proud.';
+  if (h <= 21) return 'Clocked out. Kept shipping.';
+  return 'Night owl detected. The moon is your standup.';
+}
+const DAY_QUIP = ['Sunday scaries? Never heard of them.','You actually like Mondays. Interesting.','Tuesday: the most productive day nobody talks about.',
+  'Midweek momentum. Hump day? Pump day.','Thursday is the new Friday.','Friday deploys. Bold. Respect.','Saturdays are for side projects.'];
+function costQuip(u) {
+  if (u < 1) return 'Less than a gumball. Frugal legend.';
+  if (u < 20) return 'About one really good burrito.';
+  if (u < 100) return "A nice dinner out. Claude's a cheap date.";
+  if (u < 500) return 'Front-row concert tickets.';
+  if (u < 2000) return 'A round-trip flight somewhere warm.';
+  if (u < 10000) return 'A used Honda Civic. Reliable, like you.';
+  if (u < 50000) return 'A brand-new car. Zoom zoom.';
+  return 'A seed round. Have you considered raising?';
+}
+
+// ---------- slides ----------
+function buildSlides(d) {
+  const S = [];
+  const T = d.totals, W = d.words, CL = d.claude, tm = d.time;
+  const theme = (bg, fg, a1, a2) => ({ bg, fg, a1, a2 });
+
+  // 0 · intro
+  const range = d.range ? `Based on your local history · ${niceDate(d.range.from)} – ${niceDate(d.range.to)}` : '';
+  S.push({ id:'intro', dur:0, theme:theme(P.plum, P.cream, P.lime, P.pink), html:`
+    <div class="deco">${burst(P.lime,'58%','-22%','74cqw',16,50,41)}${orb(P.pink,'-26%','72%','72cqw',{t:10})}${orb(P.violet,'62%','86%','46cqw',{t:7,dx:'-8cqw'})}${ring(P.cobalt,'-16%','16%','30cqw',4)}</div>
+    <div class="content">
+      <div class="spacer"></div>
+      <div class="kicker rise" ${d_(.1)}>${esc(YEAR)} · Your year in Claude Code</div>
+      <h1 class="title pop" ${d_(.2)}>Claude<br><span class="w">Wrapped</span><span class="yr">${esc(YEAR === 'All-time' ? '∞' : "'" + YEAR.slice(2))}</span></h1>
+      <p class="lead rise" ${d_(.55)}>A year of prompts, panics &amp; “you’re absolutely right.”</p>
+      <div class="spacer"></div>
+      <button class="cta rise" ${d_(.8)} data-act="start">Unwrap it →</button>
+      <p class="fine rise" ${d_(1)}>${d.demo ? '✨ This is sample data. Run <b>npx claudewrapped</b> for yours.' : '🔒 Computed on your machine. Nothing was uploaded.'}<br>${esc(range)}</p>
+    </div>` });
+
+  // 1 · minutes
+  const chips = [`${fmt(T.sessions)} ${pl(T.sessions,'session')}`, `${fmt(T.projects)} ${pl(T.projects,'project')}`, `${fmt(T.activeDays)} ${pl(T.activeDays,'day')}`];
+  if (tm.maxParallel >= 3) chips.push(`up to ${tm.maxParallel} Claudes at once 🐙`);
+  S.push({ id:'minutes', dur:7500, theme:theme(P.lime, P.ink, P.violet, P.pink), html:`
+    <div class="deco">${orb(P.violet,'58%','-12%','62cqw')}${burst(P.pink,'-24%','64%','62cqw',12,60,36)}${marquee('TIME FLIES WHEN YOU’RE PROMPTING', P.ink, P.lime, '91%', -5, 18)}</div>
+    <div class="content mid">
+      <div class="kicker rise">Minutes together</div>
+      <p class="lead rise" ${d_(.15)}>This year, you and Claude spent</p>
+      <div class="mega pop" data-fit ${d_(.3)}>${num(T.minutes, 'int', .45)}</div>
+      <p class="h2 rise" ${d_(.6)}>minutes together</p>
+      <p class="quip rise" ${d_(1)}>${minutesQuip(T.minutes)}</p>
+      <div class="chips rise" ${d_(1.35)}>${chips.map((c) => `<span class="chip">${esc(c)}</span>`).join('')}</div>
+      <div style="height:10cqw"></div>
+    </div>` });
+
+  // 2 · clock
+  S.push({ id:'clock', dur:7500, theme:theme(P.cobalt, P.cream, P.sun, P.mint), html:`
+    <div class="deco">${orb(P.mint,'70%','70%','56cqw',{op:.9})}${orb(P.sun,'-30%','-8%','50cqw',{t:11})}<div class="dots"></div></div>
+    <div class="content mid">
+      <div class="kicker rise">Your peak hour</div>
+      <div class="h1 slam" ${d_(.2)} style="font-size:22cqw;color:var(--a1)">${hourLabel(tm.peakHour)}</div>
+      ${clockSVG(tm.hours, tm.peakHour)}
+      <p class="quip rise" ${d_(1.2)}>${hourQuip(tm.peakHour)}</p>
+      <div class="chips rise" ${d_(1.5)}><span class="chip">Favorite day: ${DAYS[tm.peakWeekday]}s</span></div>
+      <p class="fine rise" ${d_(1.7)}>${DAY_QUIP[tm.peakWeekday]}</p>
+    </div>` });
+
+  // 3 · tools
+  if (d.tools.length) {
+    const t1 = d.tools[0], rest = d.tools.slice(1, 5);
+    S.push({ id:'tools', dur:8000, theme:theme(P.pink, P.ink, P.plum, P.lime), html:`
+      <div class="deco">${burst(P.lime,'56%','-14%','58cqw',20,30,42)}${burst(P.plum,'74%','90%','40cqw',12,40,36,true)}</div>
+      <div class="content">
+        <div class="kicker rise">Your top artists were…</div>
+        <h2 class="h1 rise" ${d_(.15)}>Your Top<br>Tools</h2>
+        <ol class="rank">
+          <li class="first pop" ${d_(.4)}><span class="rn">#1</span><span class="nm">${esc(toolName(t1.name))}</span><span class="ct">${fmt(t1.count)} plays</span></li>
+          ${rest.map((t, i) => `<li class="rise" ${d_(.8 + i * .15)}><span class="rn">${i + 2}</span><span class="nm">${esc(toolName(t.name))}</span><span class="ct">${fmt(t.count)}</span></li>`).join('')}
+        </ol>
+        <div class="spacer"></div>
+        <p class="quip rise" ${d_(1.6)}>${esc(TOOL_QUIP[t1.name] || 'A person of refined taste.')} <b>You're in the top 100% of ${esc(toolName(t1.name))} users.</b></p>
+      </div>` });
+  }
+
+  // 4 · languages
+  const code = d.languages.filter((l) => !PROSE.has(l.name));
+  const prose = d.languages.filter((l) => PROSE.has(l.name));
+  const genre = code[0] || prose[0];
+  if (genre) {
+    const others = d.languages.filter((l) => l !== genre).slice(0, 4);
+    const md = prose.find((l) => l.name === 'Markdown');
+    const honorable = md && genre !== md && md.count > genre.count
+      ? `<p class="fine rise" ${d_(1.8)}>Honorable mention: Markdown, which you touched more than any actual programming language. Novelist behavior.</p>` : '';
+    S.push({ id:'langs', dur:7500, theme:theme(P.violet, P.cream, P.lime, P.pink), html:`
+      <div class="deco">${marquee(genre.name.toUpperCase(), P.pink, P.ink, '91%', -6, 16)}${orb(P.mint,'-18%','8%','30cqw',{op:.9})}</div>
+      <div class="content mid">
+        <div class="kicker rise" ${d_(.1)}>Your top genre</div>
+        <div class="sticker pop" ${d_(.25)}><svg viewBox="0 0 100 100"><path fill="${P.lime}" d="${starPath(22, 50, 43)}"/></svg><span>${esc(genre.name)}</span></div>
+        <div class="pills rise" ${d_(.9)}>${others.map((l, i) => `<span class="pill"><b>#${i + 2}</b>${esc(l.name)}</span>`).join('')}</div>
+        <p class="quip rise" ${d_(1.3)} style="text-align:center">${esc(LANG_QUIP[genre.name] || 'A person of refined taste.')}</p>
+        ${honorable}
+        <div style="height:9cqw"></div>
+      </div>` });
+  }
+
+  // 5 · terminal
+  const B = d.bash;
+  if (B.total > 0) {
+    const tops = B.top.slice(0, 6), max = Math.max(1, ...tops.map((t) => t.count));
+    let bq;
+    if (B.rmrf >= 100) bq = `<b>rm -rf ×${fmt(B.rmrf)}.</b> That's not a workflow, that's a lifestyle.`;
+    else if (B.rmrf > 0) bq = `<b>rm -rf ×${fmt(B.rmrf)}.</b> Living dangerously.`;
+    else bq = 'Zero rm -rf. Boring. Safe. Correct.';
+    bq += B.forcePush > 0 ? ` And ${fmt(B.forcePush)} force ${pl(B.forcePush,'push','pushes')}. We won't tell your team.` : ' Zero force pushes. Your teammates thank you.';
+    S.push({ id:'term', dur:8500, theme:theme(P.ink, '#ECECF2', P.mint, P.tomato), html:`
+      <div class="deco"><div class="dots"></div>${orb(P.mint,'64%','-16%','50cqw',{op:.18})}</div>
+      <div class="content">
+        <div class="kicker rise">Claude ran</div>
+        <div class="mega pop a1" data-fit ${d_(.15)}>${num(B.total, 'int', .3)}</div>
+        <p class="h2 rise" ${d_(.4)}>shell commands for you</p>
+        <div class="term rise" ${d_(.6)}>
+          <div class="term-head"><i></i><i></i><i></i><span>zsh — wrapped</span></div>
+          <div class="term-body">
+            <div class="tp">$ history | sort | uniq -c | sort -rn</div>
+            ${tops.map((t, i) => `<div class="tr"><span>${esc(t.name)}</span><span class="bb"><b style="--w:${Math.max(4, t.count / max * 100)}%;--d:${.9 + i * .1}s"></b></span><span class="tc">${compact(t.count)}</span></div>`).join('')}
+          </div>
+        </div>
+        <div class="danger rise" ${d_(1.4)}>
+          <span class="${B.rmrf ? '' : 'zero'}">rm -rf ×${fmt(B.rmrf)}</span><span class="${B.forcePush ? '' : 'zero'}">push --force ×${fmt(B.forcePush)}</span><span class="${B.sudo ? '' : 'zero'}">sudo ×${fmt(B.sudo)}</span>
+        </div>
+        <p class="quip rise" ${d_(1.7)}>${bq}</p>
+      </div>` });
+  }
+
+  // 6 · lines of code
+  if (T.linesWritten > 0) {
+    const pct = T.linesWritten / 40e6 * 100;
+    const lq = pct >= 0.1
+      ? `That's <b>${pct >= 1 ? pct.toFixed(1) : pct.toFixed(2)}% of the Linux kernel.</b> Linus, watch your back.`
+      : `Printed out, that's <b>${fmt(Math.max(1, T.linesWritten / 55))} ${pl(Math.round(T.linesWritten / 55), 'page')}.</b> Please don't.`;
+    S.push({ id:'lines', dur:7500, theme:theme(P.sun, P.ink, P.tomato, P.cobalt), html:`
+      <div class="deco">${codeLines(9, [P.tomato, P.cobalt, P.ink, P.white])}</div>
+      <div class="content">
+        <div class="spacer"></div>
+        <div class="kicker rise">Claude wrote</div>
+        <div class="mega pop" data-fit ${d_(.2)}>${num(T.linesWritten, 'int', .35)}</div>
+        <p class="h2 rise" ${d_(.55)}>lines of code for you</p>
+        <p class="lead rise" ${d_(.8)}>across ${fmt(T.filesTouched)} ${pl(T.filesTouched,'file')}.</p>
+        <p class="quip rise" ${d_(1.2)}>${lq}</p>
+        <p class="fine rise" ${d_(1.5)}>…and deleted ${fmt(T.linesRemoved)}. Less is more.</p>
+      </div>` });
+  }
+
+  // 7 · tokens & cost
+  const tk = d.tokens;
+  if (tk.total > 0) {
+    const read = tk.input + tk.cacheRead + tk.cacheWrite;
+    const moby = tk.output / 280000;
+    const mq = moby >= 1 ? `That's <b>${fmt(moby)} Moby-${moby >= 1.5 ? 'Dicks' : 'Dick'}</b> of output. Call me Claude.` : `That's ${Math.round(moby * 100)}% of Moby-Dick. Call me Claude.`;
+    const m1 = d.models[0];
+    S.push({ id:'tokens', dur:9000, theme:theme(P.mint, P.ink, P.plum, P.violet), html:`
+      <div class="deco">${burst(P.violet,'62%','-10%','48cqw',10,45,30,true)}</div>
+      <div class="content mid">
+        <div class="kicker rise">Token economics</div>
+        <div class="tok rise" ${d_(.15)}><span class="lead">Claude read</span><span class="h1">${num(read, 'compact', .3)}</span><span class="lead">tokens</span></div>
+        <div class="tok rise" ${d_(.4)}><span class="lead">and wrote</span><span class="h1">${num(tk.output, 'compact', .55)}</span></div>
+        <p class="quip rise" ${d_(.8)}>${mq}</p>
+        <div class="costcard pop" ${d_(1.1)}>
+          <div class="kicker">At API prices, that's about</div>
+          <div class="mega" data-fit>${num(d.cost.usd, 'money', 1.3)}</div>
+          <p class="quip">${esc(costQuip(d.cost.usd))}</p>
+        </div>
+        <p class="fine rise" ${d_(1.6)}>${m1 ? `Mostly powered by ${esc(m1.name)} (${Math.round(m1.share * 100)}%). ` : ''}Estimated from token usage at public API rates — your actual bill may differ, especially on a plan.</p>
+      </div>` });
+  }
+
+  // 8 · catchphrases
+  {
+    const ar = CL.absolutelyRight, useAR = ar >= 5;
+    const head = useAR
+      ? `<div class="kicker rise">Claude's catchphrase of the year</div>
+         <p class="h2 rise" ${d_(.2)} style="font-size:10cqw">“You’re absolutely right!”</p>
+         <div class="mega pop" data-fit ${d_(.45)}>${num(ar, 'x', .5)}</div>
+         <p class="quip rise" ${d_(.9)}>${ar >= 50 ? 'And honestly? You weren’t. Not every time.' : 'Only sometimes were you actually right.'}</p>`
+      : `<div class="kicker rise">Claude's punctuation of the year</div>
+         <p class="h2 rise" ${d_(.2)} style="font-size:11cqw">The em dash —</p>
+         <div class="mega pop" data-fit ${d_(.45)}>${num(CL.emDashes, 'x', .5)}</div>
+         <p class="quip rise" ${d_(.9)}>Claude said “You’re absolutely right!” <b>${fmt(ar)} ${pl(ar,'time')}.</b> ${ar === 0 ? 'Character development.' : 'Growth.'} The em dashes, however — those stayed.</p>`;
+    const rows = [
+      ['“Let me…”', CL.letMe], ['“Great catch / point / idea”', CL.greatCatch], ['“Perfect!”', CL.perfect],
+      ['Apologies', CL.apology], ['“Great question”', CL.greatQuestion],
+      useAR ? ['Em dashes —', CL.emDashes] : ['“You’re absolutely right”', CL.absolutelyRight],
+    ].sort((a, b) => b[1] - a[1]).slice(0, 4);
+    S.push({ id:'catch', dur:8000, theme:theme(P.clay, P.white, P.plum, P.sun), html:`
+      <div class="deco"><span class="bigquote" style="color:${P.plum};left:-6cqw;top:6cqw;opacity:.9">“</span>${orb(P.sun,'66%','78%','52cqw')}</div>
+      <div class="content mid">
+        ${head}
+        <div class="statgrid rise" ${d_(1.3)}>${rows.map(([k, v]) => `<div class="stat"><b>${compact(v)}</b><span>${esc(k)}</span></div>`).join('')}</div>
+      </div>` });
+  }
+
+  // 9 · manners
+  {
+    const nice = W.please + W.thanks + W.praise, mean = W.wtf + W.still + W.broken + W.spicy;
+    const pct = nice + mean ? nice / (nice + mean) * 100 : 50;
+    let v;
+    if (!nice && !mean) v = 'All business. No please, no wtf. Respect.';
+    else if (pct >= 80) v = "Certified sweetheart. When the robots rise, you're on the good list.";
+    else if (pct >= 50) v = 'Mostly polite. Occasionally unhinged. Very human.';
+    else if (pct >= 20) v = 'Chaotic neutral. A please, then a wtf, then a please again.';
+    else v = 'The robots will remember this. 😬';
+    S.push({ id:'manners', dur:8000, theme:theme(P.cream, P.ink, P.pink, P.tomato), html:`
+      <div class="deco">${burst(P.pink,'64%','-12%','46cqw',12,50,38)}${orb(P.lime,'-26%','86%','50cqw')}</div>
+      <div class="content mid">
+        <div class="kicker rise">The vibe check</div>
+        <h2 class="h1 rise" ${d_(.15)}>How you talk<br>to Claude</h2>
+        <div class="vs">
+          <div class="col nice pop" ${d_(.4)}><div class="emo">😇</div>
+            <div class="row"><b>${fmt(W.please)}</b>× please</div><div class="row"><b>${fmt(W.thanks)}</b>× thank you</div><div class="row"><b>${fmt(W.praise)}</b>× “perfect!”</div></div>
+          <div class="col spicy pop" ${d_(.6)}><div class="emo">😤</div>
+            <div class="row"><b>${fmt(W.wtf)}</b>× wtf</div><div class="row"><b>${fmt(W.still + W.broken)}</b>× “still broken”</div><div class="row"><b>${fmt(W.spicy)}</b>× spicy words</div></div>
+        </div>
+        <div class="meter rise" ${d_(.8)}><i style="--w:${pct}%"></i></div>
+        <div class="meterlbl rise" ${d_(.8)}><span>😇 ${Math.round(pct)}% nice</span><span>${100 - Math.round(pct)}% spicy 🌶️</span></div>
+        <p class="quip rise" ${d_(1.4)}><b>Verdict:</b> ${esc(v)}</p>
+      </div>` });
+  }
+
+  // 10 · words
+  {
+    const tp = W.topPhrase;
+    let wq;
+    if (W.longestPromptChars >= 4000) wq = `Your longest prompt was <b>${fmt(W.longestPromptChars)} characters.</b> That's not a prompt, that's a PRD.`;
+    else if (W.yelled > 0) wq = `And you YELLED IN ALL CAPS <b>${fmt(W.yelled)} ${pl(W.yelled,'time')}.</b> Claude heard you.`;
+    else if (W.sorry > 0) wq = `You apologized to Claude <b>${fmt(W.sorry)} ${pl(W.sorry,'time')}.</b> It forgives you.`;
+    else wq = `Your average prompt: <b>${fmt(W.avgPromptChars)} characters.</b> Concise. Mysterious.`;
+    const stats = [[T.interruptions, 'times you hit Esc mid-thought'], [W.continue + W.approve, '“yes” / “continue” / “do it”'], [T.images, 'screenshots sent'], [T.prompts, 'prompts, total']];
+    S.push({ id:'words', dur:8000, theme:theme(P.tomato, P.white, P.sun, P.plum), html:`
+      <div class="deco">${marquee('GREATEST HITS', P.sun, P.ink, '86%', 6, 16)}${orb(P.plum,'66%','-14%','50cqw',{op:.9})}</div>
+      <div class="content mid">
+        <div class="kicker rise">Your greatest hits</div>
+        ${tp ? `<p class="lead rise" ${d_(.15)}>Your most-said word to Claude:</p>
+        <div class="bigphrase pop" data-fit ${d_(.35)}>“${esc(tp.label)}”</div>
+        <p class="h2 rise" ${d_(.7)}>${fmt(tp.count)} ${pl(tp.count,'time')}</p>` : `<p class="h1 rise">A person of few words.</p>`}
+        <div class="statgrid rise" ${d_(1)}>${stats.map(([n, k]) => `<div class="stat"><b>${fmt(n)}</b><span>${esc(k)}</span></div>`).join('')}</div>
+        <p class="quip rise" ${d_(1.4)}>${wq}</p>
+        <div style="height:12cqw"></div>
+      </div>` });
+  }
+
+  // 11 · calendar
+  if (T.activeDays > 0) {
+    const s = tm.longestStreak;
+    const sq = s >= 30 ? 'A month straight. Touch grass? Never heard of it.' : s >= 14 ? "Two weeks straight. Claude's starting to think you live here." : s >= 7 ? 'A full week straight. Claude noticed.' : 'Healthy boundaries. We love that for you.';
+    const bd = tm.busiestDay;
+    S.push({ id:'calendar', dur:8000, theme:theme(P.plum, P.cream, P.lime, P.mint), html:`
+      <div class="deco">${orb(P.violet,'60%','-14%','56cqw',{op:.8})}${burst(P.mint,'72%','90%','40cqw',8,60,32)}</div>
+      <div class="content mid">
+        <div class="kicker rise">Showing up</div>
+        <div class="mega pop a1" data-fit ${d_(.15)}>${num(T.activeDays, 'int', .3)}</div>
+        <p class="h2 rise" ${d_(.4)}>days with Claude</p>
+        ${heatmap(d)}
+        <div class="duo rise" ${d_(1.1)}>
+          <div><b>${fmt(s)}</b><span>day streak, longest</span></div>
+          ${bd ? `<div><b>${fmt(bd.prompts)}</b><span>prompts on ${DAYS[parseDay(bd.date).getDay()].slice(0,3)}, ${niceDate(bd.date)} — your busiest day</span></div>` : ''}
+        </div>
+        <p class="quip rise" ${d_(1.5)}>${esc(sq)}${bd ? ' And whatever happened on ' + esc(niceDate(bd.date)) + '? We don’t want to know.' : ''}</p>
+      </div>` });
+  }
+
+  // 12 · personality
+  {
+    const p = d.personality || { id:'vibe', name:'The Vibe Coder', emoji:'✨', tagline:'You came. You prompted. You vibed.', traits:[] };
+    const [c1, c2, c3, fg] = ARCH_COLORS[p.id] || ARCH_COLORS.vibe;
+    S.push({ id:'persona', dur:9500, theme:theme(c1, fg, c3, c2), html:`
+      <div class="deco"><div class="gradbg" style="background-image:linear-gradient(135deg,${c1},${c2},${c3},${c1})"></div></div>
+      ${confetti(36, [P.lime, P.pink, P.sun, P.mint, P.cream, P.violet])}
+      <div class="content center persona">
+        <div class="kicker rise" style="text-align:center">Your Claude personality is…</div>
+        <div class="pemoji pop" ${d_(.9)}><span class="wobble" style="display:inline-block">${esc(p.emoji)}</span></div>
+        <h2 class="pname slam" ${d_(1.35)}>${esc(p.name)}</h2>
+        <p class="quip rise" ${d_(2)}>${esc(p.tagline)}</p>
+        ${p.traits && p.traits.length ? `<div class="chips rise" ${d_(2.5)}>${p.traits.map((t) => `<span class="chip ghost">${esc(t)}</span>`).join('')}</div>` : ''}
+      </div>` });
+  }
+
+  // 13 · share
+  S.push({ id:'share', dur:0, theme:theme(P.ink, P.cream, P.lime, P.pink), html:`
+    <div class="deco">${orb(P.violet,'-30%','-10%','70cqw',{op:.35})}${orb(P.lime,'70%','80%','50cqw',{op:.18})}</div>
+    <div class="content share">
+      <div class="kicker rise">That's a wrap 🎁</div>
+      <div class="cardwrap pop" ${d_(.15)}><img id="cardImg" alt="Your Claude Wrapped summary card"></div>
+      <div class="actions rise" ${d_(.5)}>
+        <button class="btn primary" data-act="save">Save image</button>
+        <button class="btn" data-act="copy">Copy image</button>
+        <button class="btn" data-act="post">Post on 𝕏</button>
+      </div>
+      <div class="opts rise" ${d_(.65)}>
+        <label><input type="checkbox" data-opt="cost" checked> show $ value</label>
+        <button class="linkbtn" data-act="replay">↺ replay</button>
+      </div>
+      <p class="fine rise" ${d_(.8)} style="text-align:center">Copy, then paste it into your post. #ClaudeWrapped</p>
+    </div>`, after: (el) => paintCard(el) });
+
+  return S;
+}
+
+function clockSVG(hours, peak) {
+  const max = Math.max(1, ...hours); let s = '';
+  for (let h = 0; h < 24; h++) {
+    const a = (h / 24) * Math.PI * 2 - Math.PI / 2, r0 = 33, r1 = 33 + 3 + (hours[h] / max) * 55;
+    const p = (r) => [(100 + Math.cos(a) * r).toFixed(2), (100 + Math.sin(a) * r).toFixed(2)];
+    const [x1, y1] = p(r0), [x2, y2] = p(r1);
+    s += `<line class="rbar${h === peak ? ' peak' : ''}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" pathLength="1" style="--i:${h}"/>`;
+  }
+  const lbl = [['12a', 0], ['6a', 6], ['12p', 12], ['6p', 18]].map(([t, h]) => { const a = (h / 24) * Math.PI * 2 - Math.PI / 2; return `<text x="${100 + Math.cos(a) * 21}" y="${100 + Math.sin(a) * 21}">${t}</text>`; }).join('');
+  return `<svg class="clock" viewBox="0 0 200 200" aria-label="Prompts by hour of day">${s}${lbl}</svg>`;
+}
+
+function heatmap(d) {
+  const days = d.time.days || {}; const keys = Object.keys(days).sort();
+  if (!keys.length) return '';
+  const from = parseDay((d.range && d.range.from) || keys[0]), to = parseDay((d.range && d.range.to) || keys[keys.length - 1]);
+  const start = new Date(from); start.setDate(start.getDate() - start.getDay());
+  const vals = Object.values(days).filter(Boolean).sort((a, b) => a - b);
+  const q = (p) => vals[Math.floor(p * (vals.length - 1))];
+  const [t1, t2, t3] = [q(.25), q(.55), q(.85)];
+  let cells = '', n = 0;
+  for (const dt = new Date(start); dt <= to; dt.setDate(dt.getDate() + 1), n++) {
+    const v = days[localDay(dt)] || 0;
+    const lvl = dt < from ? 'pad' : !v ? 'l0' : v <= t1 ? 'l1' : v <= t2 ? 'l2' : v <= t3 ? 'l3' : 'l4';
+    cells += `<i class="${lvl}" style="--i:${n}"></i>`;
+  }
+  const cols = Math.ceil(n / 7);
+  return `<div class="heat" style="--cols:${cols};aspect-ratio:${cols}/7" aria-label="Activity calendar">${cells}</div>`;
+}
+
+// ---------- share card (pure canvas, no libraries) ----------
+const opts = { cost: true };
+let cardCanvas = null;
+function drawCard(d) {
+  const W = 1080, H = 1350, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const x = cv.getContext('2d');
+  const SANS = 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+  const MONO = 'ui-monospace, "SF Mono", Menlo, Consolas, monospace';
+  const EMOJI = '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+  const F = (w, s, f = SANS) => { x.font = `${w} ${s}px ${f}`; };
+  const fit = (t, maxW, s, min, w = 900, f = SANS) => { for (; s > min; s -= 2) { F(w, s, f); if (x.measureText(t).width <= maxW) return s; } F(w, min, f); return min; };
+  const rr = (X, Y, w, h, r) => { x.beginPath(); if (x.roundRect) x.roundRect(X, Y, w, h, r); else { x.moveTo(X + r, Y); x.arcTo(X + w, Y, X + w, Y + h, r); x.arcTo(X + w, Y + h, X, Y + h, r); x.arcTo(X, Y + h, X, Y, r); x.arcTo(X, Y, X + w, Y, r); x.closePath(); } };
+  const star = (cx, cy, ro, ri, n) => { const p = starPts(n, ro, ri, cx, cy); x.beginPath(); p.forEach(([a, b], i) => i ? x.lineTo(a, b) : x.moveTo(a, b)); x.closePath(); };
+  const wrap = (text, maxW) => { const out = []; let cur = ''; for (const w of text.split(' ')) { const t = cur ? cur + ' ' + w : w; if (x.measureText(t).width > maxW && cur) { out.push(cur); cur = w; } else cur = t; } if (cur) out.push(cur); return out; };
+  const spaced = (px) => { if ('letterSpacing' in x) x.letterSpacing = px; };
+
+  // background + shapes
+  x.fillStyle = P.plum; x.fillRect(0, 0, W, H);
+  x.fillStyle = P.lime; x.beginPath(); x.arc(W + 60, 40, 250, 0, Math.PI * 2); x.fill();
+  x.strokeStyle = P.violet; x.lineWidth = 40; x.beginPath(); x.arc(W + 70, 830, 150, 0, Math.PI * 2); x.stroke();
+  x.textBaseline = 'alphabetic'; x.textAlign = 'left';
+
+  // header
+  F(900, 66); x.fillStyle = P.lime; spaced('-1px'); x.fillText('CLAUDE WRAPPED', 58, 128);
+  const tw = x.measureText('CLAUDE WRAPPED').width;
+  F(900, 40); const yl = YEAR, pw = x.measureText(yl).width + 50;
+  x.save(); x.translate(58 + tw + 22, 80); x.rotate(-0.09); x.fillStyle = P.pink; rr(0, 0, pw, 62, 31); x.fill();
+  x.fillStyle = P.ink; x.textAlign = 'center'; x.fillText(yl, pw / 2, 45); x.restore(); x.textAlign = 'left';
+  F(700, 24, MONO); spaced('4px'); x.fillStyle = 'rgba(244,239,230,.72)'; x.fillText('MY YEAR IN CLAUDE CODE', 61, 174);
+
+  // hero
+  const p = d.personality;
+  x.fillStyle = P.cream; rr(56, 210, W - 112, 404, 44); x.fill();
+  F(700, 24, MONO); x.fillStyle = 'rgba(11,11,15,.55)'; x.fillText('MY CLAUDE PERSONALITY', 102, 274);
+  spaced('-2px');
+  const name = p.name.toUpperCase(); let lines = [name], s = fit(name, 872, 104, 66);
+  if (x.measureText(name).width > 872) {
+    const words = name.split(' '); let best = [name, ''], bd = Infinity;
+    for (let i = 1; i < words.length; i++) { const a = words.slice(0, i).join(' '), b = words.slice(i).join(' '); if (Math.abs(a.length - b.length) < bd) { bd = Math.abs(a.length - b.length); best = [a, b]; } }
+    lines = best; s = Math.min(fit(best[0], 872, 92, 48), fit(best[1], 872, 92, 48));
+  }
+  let y = lines.length === 1 ? 438 : 388;
+  x.fillStyle = P.ink;
+  for (const l of lines) { F(900, s); x.fillText(l, 98, y); y += s * 0.94; }
+  spaced('0px'); F(600, 31); x.fillStyle = 'rgba(11,11,15,.78)';
+  let tl = wrap(p.tagline, 860); if (tl.length > 2) { F(600, 27); tl = wrap(p.tagline, 860); }
+  tl.slice(0, 2).forEach((l, i) => x.fillText(l + (i === 1 && tl.length > 2 ? '…' : ''), 102, y + 14 + i * 40));
+  // sticker
+  x.fillStyle = P.pink; star(W - 168, 252, 98, 83, 18); x.fill();
+  x.save(); x.translate(W - 168, 256); x.rotate(-0.12); x.textAlign = 'center'; x.textBaseline = 'middle'; F(400, 92, EMOJI); x.fillText(p.emoji, 0, 6); x.restore();
+  x.textAlign = 'left'; x.textBaseline = 'alphabetic';
+
+  // columns
+  const col = (title, items, X, color) => {
+    F(800, 24, MONO); spaced('4px'); x.fillStyle = color; x.fillText(title, X, 692); spaced('-1px');
+    items.slice(0, 5).forEach((it, i) => {
+      const Y = 752 + i * 60;
+      F(900, 34); x.fillStyle = color; x.fillText(String(i + 1), X, Y);
+      x.fillStyle = P.cream; fit(it, 340, 42, 26, 800); x.fillText(it, X + 50, Y);
+    });
+    spaced('0px');
+  };
+  col('TOP TOOLS', d.tools.map((t) => toolName(t.name)), 60, P.lime);
+  col('TOP LANGUAGES', d.languages.map((l) => l.name), 572, P.pink);
+
+  // tiles
+  const ar = d.claude.absolutelyRight;
+  const tiles = [
+    { bg: P.lime, label: 'MINUTES WITH CLAUDE', value: fmt(d.totals.minutes) },
+    { bg: P.pink, label: 'PEAK HOUR', value: hourLabel(d.time.peakHour) },
+    ar >= 5 ? { bg: P.sun, label: '“YOU’RE ABSOLUTELY RIGHT”', value: '×' + fmt(ar) } : { bg: P.sun, label: 'EM DASHES FROM CLAUDE', value: '×' + fmt(d.claude.emDashes) },
+    opts.cost && d.cost.usd > 0 ? { bg: P.mint, label: 'COMPUTE AT API PRICES', value: money(d.cost.usd) } : { bg: P.mint, label: 'LINES OF CODE WRITTEN', value: compact(d.totals.linesWritten) },
+  ];
+  tiles.forEach((t, i) => {
+    const X = 56 + (i % 2) * 494, Y = 1030 + Math.floor(i / 2) * 140;
+    x.fillStyle = t.bg; rr(X, Y, 474, 122, 28); x.fill();
+    F(800, 19, MONO); spaced('3px'); x.fillStyle = 'rgba(11,11,15,.68)'; x.fillText(t.label, X + 28, Y + 40);
+    spaced('-2px'); x.fillStyle = P.ink; fit(t.value, 420, 58, 30); x.fillText(t.value, X + 26, Y + 102); spaced('0px');
+  });
+
+  // footer
+  F(800, 26, MONO); x.fillStyle = 'rgba(244,239,230,.92)'; x.fillText('npx claudewrapped', 60, 1324);
+  x.textAlign = 'right'; F(700, 18, MONO); spaced('2px'); x.fillStyle = 'rgba(244,239,230,.5)';
+  x.fillText(d.demo ? 'SAMPLE DATA · UNOFFICIAL' : 'UNOFFICIAL · MADE 100% LOCALLY', W - 60, 1322);
+  return cv;
+}
+function paintCard(root) {
+  cardCanvas = drawCard(D);
+  const img = (root || document).querySelector('#cardImg');
+  if (img) img.src = cardCanvas.toDataURL('image/png');
+}
+const cardBlob = () => new Promise((res) => cardCanvas.toBlob(res, 'image/png'));
+function tweetText() {
+  const p = D.personality, t = D.tools[0];
+  const lines = [`My ${YEAR === 'All-time' ? '' : YEAR + ' '}Claude Wrapped 🎁`, '', `${p.emoji} ${p.name}`, `⏱️ ${fmt(D.totals.minutes)} minutes with Claude`];
+  if (t) lines.push(`🔧 Top tool: ${toolName(t.name)}`);
+  if (opts.cost && D.cost.usd > 0) lines.push(`💸 ≈${money(D.cost.usd)} of compute`);
+  lines.push(D.claude.absolutelyRight >= 5 ? `🫡 “You're absolutely right!” ×${fmt(D.claude.absolutelyRight)}` : `🖋️ ${fmt(D.claude.emDashes)} em dashes from Claude — we counted`);
+  lines.push('', 'Get yours: npx claudewrapped');
+  return lines.join('\n');
+}
+
+// ---------- player ----------
+const story = document.getElementById('story'), slot = document.getElementById('slot'), barsEl = document.getElementById('bars');
+const pauseBtn = document.getElementById('pauseBtn'), toastEl = document.getElementById('toast');
+const SLIDES = buildSlides(D);
+let idx = 0, elapsed = 0, last = performance.now(), paused = false, holding = false, noAuto = false;
+document.getElementById('demoChip').hidden = !D.demo;
+barsEl.innerHTML = SLIDES.slice(1).map(() => '<div class="bar"><i></i></div>').join('');
+const barFills = [...barsEl.querySelectorAll('.bar > i')];
+const ICONS = { pause: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="4" width="5" height="16" rx="1.5"/><rect x="14" y="4" width="5" height="16" rx="1.5"/></svg>',
+  play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5z"/></svg>' };
+
+function setPaused(v) { paused = v; story.classList.toggle('paused', v); pauseBtn.innerHTML = v ? ICONS.play : ICONS.pause; pauseBtn.setAttribute('aria-label', v ? 'Play' : 'Pause'); }
+
+function fitAll(root) {
+  root.querySelectorAll('[data-fit]').forEach((el) => {
+    const counts = [...el.querySelectorAll('[data-count]')];
+    counts.forEach((c) => { c.textContent = FMT[c.dataset.fmt](+c.dataset.count); });
+    el.style.fontSize = '';
+    let fs = parseFloat(getComputedStyle(el).fontSize), guard = 0;
+    while (el.scrollWidth > el.clientWidth + 1 && guard++ < 40) { fs *= 0.94; el.style.fontSize = fs + 'px'; }
+  });
+}
+function runCounts(root) {
+  root.querySelectorAll('[data-count]').forEach((el) => {
+    const to = +el.dataset.count, f = FMT[el.dataset.fmt] || fmt;
+    if (reduced) { el.textContent = f(to); return; }
+    el.textContent = f(0);
+    const t0 = performance.now() + (+el.dataset.delay || 0) * 1000, dur = 1500;
+    const tick = (now) => {
+      if (!el.isConnected) return;
+      const k = Math.min(1, Math.max(0, (now - t0) / dur));
+      el.textContent = f(k >= 1 ? to : to * (1 - Math.pow(2, -10 * k)));
+      if (k < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+}
+
+function show(i) {
+  idx = Math.max(0, Math.min(SLIDES.length - 1, i)); elapsed = 0;
+  const s = SLIDES[idx];
+  for (const [k, v] of Object.entries(s.theme)) story.style.setProperty('--' + k, v);
+  document.body.style.setProperty('--g1', s.theme.bg); document.body.style.setProperty('--g2', s.theme.a1);
+  const el = document.createElement('section');
+  el.className = 'slide'; el.dataset.id = s.id; el.innerHTML = s.html;
+  slot.replaceChildren(el);
+  fitAll(el); runCounts(el);
+  if (s.after) s.after(el);
+  barsEl.style.visibility = idx === 0 ? 'hidden' : 'visible';
+  updateBars();
+}
+const next = () => { if (idx < SLIDES.length - 1) show(idx + 1); };
+const prev = () => show(idx <= 1 ? idx : idx - 1); // never back to the intro; slide 1 just restarts
+function updateBars() {
+  const s = SLIDES[idx];
+  barFills.forEach((b, j) => {
+    const k = j + 1;
+    b.style.width = k < idx ? '100%' : k > idx ? '0%' : (s.dur ? Math.min(100, elapsed / s.dur * 100) : 100) + '%';
+  });
+}
+function loop(now) {
+  const dt = Math.min(100, now - last); last = now;
+  const s = SLIDES[idx];
+  if (s.dur && !paused && !holding && !noAuto && !document.hidden) { elapsed += dt; if (elapsed >= s.dur) next(); }
+  updateBars();
+  requestAnimationFrame(loop);
+}
+
+// input
+let downAt = null, holdTimer = null;
+story.addEventListener('pointerdown', (e) => {
+  if (e.target.closest('button,a,input,label')) return;
+  downAt = e.clientX;
+  holdTimer = setTimeout(() => { holding = true; story.classList.add('held'); }, 230);
+});
+const endPress = (e, cancel) => {
+  if (downAt == null) return;
+  clearTimeout(holdTimer);
+  const wasHold = holding; holding = false; story.classList.remove('held');
+  const xPos = downAt; downAt = null;
+  if (cancel || wasHold) return;
+  const r = story.getBoundingClientRect();
+  if (idx === 0) return next();
+  if (xPos - r.left < r.width * 0.3) prev(); else next();
+};
+story.addEventListener('pointerup', (e) => endPress(e, false));
+story.addEventListener('pointercancel', (e) => endPress(e, true));
+story.addEventListener('pointerleave', (e) => { if (downAt != null && holding) endPress(e, true); });
+story.addEventListener('contextmenu', (e) => e.preventDefault());
+pauseBtn.addEventListener('click', (e) => { e.stopPropagation(); setPaused(!paused); });
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight') next();
+  else if (e.key === 'ArrowLeft') prev();
+  else if (e.key === ' ' || e.key === 'k') { e.preventDefault(); if (idx === 0) next(); else setPaused(!paused); }
+});
+
+function toast(msg) { toastEl.textContent = msg; toastEl.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => toastEl.classList.remove('on'), 2400); }
+
+story.addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-act]');
+  const opt = e.target.closest('[data-opt]');
+  if (opt) { opts[opt.dataset.opt] = opt.checked; paintCard(); return; }
+  if (!b) return;
+  e.stopPropagation();
+  const act = b.dataset.act;
+  if (act === 'start') return next();
+  if (act === 'replay') return show(1);
+  if (act === 'save') {
+    const url = URL.createObjectURL(await cardBlob());
+    const a = Object.assign(document.createElement('a'), { href: url, download: `claude-wrapped-${YEAR.toLowerCase()}.png` });
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 4000);
+    return toast('Saved! Now go post it. 🎁');
+  }
+  if (act === 'copy') {
+    try { await navigator.clipboard.write([new ClipboardItem({ 'image/png': cardBlob() })]); toast('Copied! Paste it into your post.'); }
+    catch { try { await navigator.clipboard.write([new ClipboardItem({ 'image/png': await cardBlob() })]); toast('Copied! Paste it into your post.'); } catch { toast('Copy isn’t allowed here. Use Save image.'); } }
+    return;
+  }
+  if (act === 'post') {
+    window.open('https://x.com/intent/post?text=' + encodeURIComponent(tweetText()), '_blank', 'noopener');
+    return toast('Tip: paste the image into the post 📋');
+  }
+});
+
+// ---------- demo data (used when the page is opened without your stats) ----------
+function makeDemo() {
+  const r = seeded(2026), days = {};
+  const start = new Date('2026-01-06T12:00:00'), end = new Date('2026-11-08T12:00:00');
+  for (const dt = new Date(start); dt <= end; dt.setDate(dt.getDate() + 1)) {
+    const wk = dt.getDay() === 0 || dt.getDay() === 6;
+    if (r() < (wk ? 0.45 : 0.82)) days[localDay(dt)] = Math.round(4 + r() * r() * 70);
+  }
+  days['2026-03-17'] = 144;
+  const hours = [118,96,71,40,12,3,2,4,9,22,41,63,58,77,96,104,121,119,98,112,140,166,171,152];
+  const total = hours.reduce((a, b) => a + b, 0);
+  return {
+    schema:1, demo:true, year:2026, generated:'2026-11-09', range:{ from:'2026-01-06', to:'2026-11-08' },
+    totals:{ prompts:total, sessions:388, projects:23, activeDays:Object.keys(days).length, minutes:21780, agentMinutes:31240, toolCalls:58210,
+      toolErrors:1890, subagents:640, filesTouched:2311, linesWritten:184220, linesRemoved:41870, images:318, interruptions:402, slashCommands:512,
+      bangCommands:77, compactions:96, apiErrors:41, thinkingBlocks:22100, webSearches:380, webFetches:510, questionsAsked:62 },
+    time:{ hours, weekdays:[211,402,388,371,356,301,166], peakHour:hours.indexOf(Math.max(...hours)), peakWeekday:1, nightShare:.34, dawnShare:.01, weekendShare:.17,
+      longestStreak:19, longestSessionMin:412, maxParallel:4, maxToolsInTurn:212, busiestDay:{ date:'2026-03-17', prompts:144 }, days },
+    tools:[{name:'Bash',count:21880},{name:'Read',count:14210},{name:'Edit',count:9930},{name:'Grep',count:4120},{name:'Write',count:2210},{name:'Agent',count:640},{name:'WebFetch',count:510},{name:'Todos',count:480}],
+    languages:[{name:'TypeScript',count:6120},{name:'Markdown',count:2110},{name:'Python',count:1720},{name:'JSON',count:980},{name:'CSS',count:640},{name:'Shell',count:310}],
+    bash:{ total:21880, top:[{name:'git',count:6210},{name:'npm',count:3980},{name:'grep',count:2410},{name:'ls',count:2010},{name:'cat',count:1440},{name:'python3',count:1210}], rmrf:38, forcePush:7, sudo:3, gitCommits:1210, installs:211 },
+    tokens:{ input:2100000, output:41200000, cacheRead:3900000000, cacheWrite:210000000, total:4153300000 },
+    cost:{ usd:3184.5 }, models:[{name:'Opus 5.5',share:.71},{name:'Sonnet 5.5',share:.21},{name:'Haiku 5.5',share:.08}],
+    words:{ please:611, thanks:288, wtf:94, spicy:57, still:131, broken:88, why:402, fix:1210, undo:76, praise:203, lol:44, ultrathink:39, pop:12, sorry:21,
+      continue:388, approve:512, yelled:23, avgPromptChars:212, longestPromptChars:6120, topPhrase:{ label:'fix', count:1210 } },
+    claude:{ absolutelyRight:187, perfect:322, greatQuestion:14, apology:61, greatCatch:97, letMe:5120, emDashes:3870 },
+    slash:[{name:'/clear',count:301},{name:'/compact',count:96}],
+    personality:{ id:'night', name:'The Night Shift', emoji:'🌙', tagline:'Your best ideas show up after midnight. So do your worst bugs.', traits:['Polite','Esc-happy','Bash-pilled'] },
+  };
+}
+
+const jump = /^#(\d+)$/.exec(location.hash); // #5 → open slide 5 without auto-advance (handy for screenshots)
+noAuto = !!jump;
+setPaused(false);
+show(jump ? +jump[1] : 0);
+requestAnimationFrame((t) => { last = t; loop(t); });
+})();
+</script>
+</body>
+</html>

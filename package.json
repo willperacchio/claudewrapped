@@ -1,0 +1,38 @@
+{
+  "name": "claudewrapped",
+  "version": "0.1.0",
+  "description": "Your year in Claude Code, Spotify Wrapped style. 100% local — nothing leaves your machine.",
+  "bin": {
+    "claudewrapped": "bin/claudewrapped.js"
+  },
+  "files": [
+    "bin",
+    "lib",
+    "web"
+  ],
+  "scripts": {
+    "start": "node bin/claudewrapped.js",
+    "demo": "node bin/claudewrapped.js --demo",
+    "json": "node bin/claudewrapped.js --json"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "wrapped",
+    "year-in-review",
+    "stats",
+    "cli"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/willperacchio/claudewrapped.git"
+  },
+  "homepage": "https://github.com/willperacchio/claudewrapped#readme",
+  "bugs": {
+    "url": "https://github.com/willperacchio/claudewrapped/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}
