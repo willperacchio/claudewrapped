@@ -14,7 +14,8 @@
     "start": "node bin/claudewrapped.js",
     "demo": "node bin/claudewrapped.js --demo",
     "json": "node bin/claudewrapped.js --json",
-    "test": "node --test test/firewall.test.js"
+    "test": "node --test test/firewall.test.js",
+    "build:site": "node scripts/build-site.js"
   },
   "keywords": [
     "claude",

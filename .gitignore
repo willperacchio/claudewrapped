@@ -1,6 +1,7 @@
 # generated Wrapped pages (contain real stats)
 out/
 *.png
+!docs/og.png
 claude-wrapped-*.html
 
 # local only

@@ -7,6 +7,8 @@
 <meta name="color-scheme" content="dark">
 <title>Claude Wrapped</title>
 <meta name="description" content="Your year in Claude Code, Spotify Wrapped style. Computed 100% locally.">
+<meta name="referrer" content="no-referrer">
+<!--__HEAD_EXTRA__-->
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎁</text></svg>">
 <style>
 /* Art direction: printed matter. Two inks per slide on a paper tone, visible grain,
@@ -275,6 +277,11 @@ body{background:#0B0A0C;color:var(--paper);font-family:var(--sans);-webkit-font-
 .opts label{display:flex;gap:1.4cqw;align-items:center;cursor:pointer}
 .opts input{accent-color:var(--lime);width:3.2cqw;height:3.2cqw}
 .linkbtn{appearance:none;border:0;background:none;color:inherit;font:inherit;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.getyours{width:100%;display:flex;flex-direction:column;gap:1.4cqw}
+.getyours .row{display:flex;align-items:center;gap:2cqw;padding:1.8cqw 1.8cqw 1.8cqw 3.6cqw;border-radius:99px;
+  box-shadow:inset 0 0 0 .35cqw color-mix(in srgb,var(--fg) 30%,transparent)}
+.getyours code{flex:1;min-width:0;font:600 2.65cqw/1.2 var(--mono);color:var(--a1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;user-select:text;-webkit-user-select:text}
+.getyours .btn{padding:2.2cqw 3.6cqw;font-size:3.1cqw;flex:none}
 .toast{position:absolute;left:50%;bottom:11cqw;transform:translate(-50%,6cqw);opacity:0;z-index:30;background:var(--paper);color:var(--ink);
   font:700 3.3cqw var(--sans);padding:2.8cqw 4.6cqw;border-radius:99px;transition:.4s var(--out);pointer-events:none;white-space:nowrap}
 .toast.on{transform:translate(-50%,0);opacity:1}
@@ -304,6 +311,13 @@ body{background:#0B0A0C;color:var(--paper);font-family:var(--sans);-webkit-font-
 <script>
 (() => {
 'use strict';
+const CTA = /*__CTA__*/'npx claudewrapped';   // the command we tell people to run
+const HOSTED = /*__HOSTED__*/false;           // true only for the public demo site
+// The public site refuses to run inside someone else's frame (clickjacking / spoofed wrappers).
+if (HOSTED && window.top !== window.self) {
+  document.getElementById('stage').textContent = 'Claude Wrapped only runs as its own page: ' + location.href;
+  return;
+}
 
 // ---------- inks ----------
 const P = { paper:'#F2EDE4', ink:'#15120F', plum:'#1B1024', lime:'#D2FF3A', clay:'#D9623B', cobalt:'#2742F5',
@@ -534,8 +548,8 @@ function buildSlides(d) {
   const th = (bg, fg, a1) => ({ bg, fg, a1 });
 
   // 0 · intro
-  const range = d.range ? `Based on your local history · ${niceDate(d.range.from)} – ${niceDate(d.range.to)}` : '';
-  S.push({ id:'intro', name:'npx claudewrapped', dur:0, theme:th(P.plum, P.paper, P.lime), html:`
+  const range = d.range && !d.demo ? `Based on your local history · ${niceDate(d.range.from)} – ${niceDate(d.range.to)}` : '';
+  S.push({ id:'intro', name:CTA, dur:0, theme:th(P.plum, P.paper, P.lime), html:`
     <div class="deco"><div class="ghost">${esc(YY)}</div></div>
     <div class="content">
       <div class="introtop">
@@ -548,7 +562,7 @@ function buildSlides(d) {
       <p class="voice rv" ${dl(.8)}>A year of prompts, panics &amp; “you’re absolutely right.”</p>
       <div class="spacer" style="flex:.55"></div>
       <button class="cta rv" ${dl(1)} data-act="start">Unwrap it <span aria-hidden="true">→</span></button>
-      <p class="fine rv" ${dl(1.15)}>${d.demo ? 'This is sample data. Run npx claudewrapped for yours.' : 'Computed on your machine. Nothing was uploaded.'}<br>${esc(range)}</p>
+      <p class="fine rv" ${dl(1.15)}>${d.demo ? `This is sample data. Run ${esc(CTA)} for yours.` : 'Computed on your machine. Nothing was uploaded.'}<br>${esc(range)}</p>
     </div>` });
 
   // 1 · minutes
@@ -837,6 +851,7 @@ function buildSlides(d) {
           <button class="btn" data-act="copy">Copy image</button>
           <button class="btn" data-act="post">Post on 𝕏</button>
         </div>
+        ${D.demo ? `<div class="getyours rv" ${dl(.6)}><span class="label">Get yours · runs on your machine</span><div class="row"><code>${esc(CTA)}</code><button class="btn" data-act="copycmd">Copy</button></div></div>` : ''}
         <div class="opts rv" ${dl(.65)}>
           <label><input type="checkbox" data-opt="cost" ${opts.cost ? 'checked' : ''}> show $ value</label>
           <button class="linkbtn" data-act="replay">↺ replay</button>
@@ -944,7 +959,7 @@ function drawCard(d) {
   });
 
   // footer
-  F(700, 24, MONO); sp('0px'); const cmd = 'npx claudewrapped', cw = x.measureText(cmd).width;
+  const cmd = CTA; F(700, cmd.length > 24 ? 19 : 24, MONO); sp('0px'); const cw = x.measureText(cmd).width;
   x.fillStyle = ac; rr(M, 1252, cw + 52, 50, 25); x.fill(); x.fillStyle = on; x.fillText(cmd, M + 26, 1285);
   x.textAlign = 'right'; F(600, 15, MONO); sp('2px'); x.fillStyle = rgba(fg, .6);
   x.fillText(d.demo ? 'SAMPLE DATA · UNOFFICIAL' : 'UNOFFICIAL · MADE 100% LOCALLY', W - M + 2, 1283);
@@ -961,12 +976,14 @@ function paintCard(root) {
 }
 const cardBlob = () => new Promise((res) => cardCanvas.toBlob(res, 'image/png'));
 function tweetText() {
+  if (D.demo) return ['Claude Wrapped: Spotify Wrapped, but for Claude Code 🎁', '', 'Runs 100% on your machine. Get yours:', CTA]
+    .concat(HOSTED ? ['', location.origin + location.pathname] : []).join('\n');
   const p = persona, t = D.tools[0];
   const lines = [`My ${YEAR === 'All-time' ? '' : YEAR + ' '}Claude Wrapped 🎁`, '', `${p.emoji} ${p.name}`, `⏱️ ${fmt(D.totals.minutes)} minutes with Claude`];
   if (t) lines.push(`🔧 Top tool: ${toolName(t.name)}`);
   if (opts.cost && D.cost.usd > 0) lines.push(`💸 ≈${money(D.cost.usd)} of compute`);
   lines.push(D.claude.absolutelyRight >= 5 ? `🫡 “You're absolutely right!” ×${fmt(D.claude.absolutelyRight)}` : `🖋️ ${fmt(D.claude.emDashes)} em dashes from Claude — we counted`);
-  lines.push('', 'Get yours: npx claudewrapped');
+  lines.push('', 'Get yours: ' + CTA);
   return lines.join('\n');
 }
 
@@ -1099,6 +1116,11 @@ story.addEventListener('click', async (e) => {
   if (act === 'copy') {
     try { await navigator.clipboard.write([new ClipboardItem({ 'image/png': cardBlob() })]); toast('Copied. Paste it into your post.'); }
     catch { try { await navigator.clipboard.write([new ClipboardItem({ 'image/png': await cardBlob() })]); toast('Copied. Paste it into your post.'); } catch { toast('Copy isn’t allowed here. Use Save image.'); } }
+    return;
+  }
+  if (act === 'copycmd') {
+    try { await navigator.clipboard.writeText(CTA); toast('Copied. Paste it into your terminal.'); }
+    catch { toast('Copy isn’t allowed here. Select the command instead.'); }
     return;
   }
   if (act === 'post') {

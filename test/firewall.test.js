@@ -66,3 +66,19 @@ test('hostile transcripts cannot reach the page', async () => {
   assert.ok(!html.includes("script-src 'unsafe-inline'"));
   fs.rmSync(root, { recursive: true, force: true });
 });
+
+test('the public demo site is up to date and contains no real data', () => {
+  const built = fs.readFileSync(path.join(__dirname, '..', 'docs', 'index.html'), 'utf8');
+  assert.strictEqual(built, render(null, { hosted: true }), 'docs/index.html is stale: run npm run build:site');
+  assert.ok(built.includes('window.__WRAPPED__ = /*__WRAPPED_DATA__*/null'), 'demo site must not embed stats');
+  assert.ok(built.includes('const HOSTED = true'), 'demo site must have the anti-framing guard on');
+  assert.match(built, /script-src 'sha256-[^']+' 'sha256-[^']+'/);
+  assert.throws(() => render({ schema: 1 }, { hosted: true }), /never contain real stats/);
+});
+
+test('the advertised command is never the bare, unclaimed npm name', () => {
+  const { CTA } = require('../lib/render');
+  const html = render(null);
+  assert.ok(html.includes(JSON.stringify(CTA)));
+  assert.ok(!/\bnpx claudewrapped\b/.test(html.replace(/\/\*__CTA__\*\//, '')), 'page hard-codes the npm name somewhere');
+});

@@ -3,10 +3,12 @@
 **Your year in Claude Code, Spotify Wrapped style.**
 
 ```bash
-npx claudewrapped
+npx github:willperacchio/claudewrapped
 ```
 
 That's it. In about 10 seconds you get a story-mode recap of your year with Claude Code, plus a share card for your timeline.
+
+**See it first:** [willperacchio.github.io/claudewrapped](https://willperacchio.github.io/claudewrapped/) plays the whole thing with sample data.
 
 > 🔒 **100% local.** It reads your transcripts on your machine and writes one HTML file. No servers, no uploads, no analytics. The page makes zero network requests.
 
@@ -42,8 +44,14 @@ Claude Wrapped is built so that **your data can't leak into the page, even by ac
 Don't trust us? Look at exactly what goes into the page:
 
 ```bash
-npx claudewrapped --json
+npx github:willperacchio/claudewrapped --json
 ```
+
+## Security
+
+- **No dependencies, no install scripts.** The only code that runs is in this repo.
+- **The demo site** is a single static page with the same locked-down policy: no scripts but its own, no network requests, no analytics, and it refuses to run inside another site's frame. It only ever contains sample data.
+- **Found a problem?** Please report it privately. See [SECURITY.md](SECURITY.md).
 
 ## Options
 

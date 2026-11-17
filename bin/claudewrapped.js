@@ -5,14 +5,14 @@ const path = require('path');
 const os = require('os');
 const { spawn } = require('child_process');
 const { analyze, defaultRoots } = require('../lib/analyze');
-const { render } = require('../lib/render');
+const { render, CTA } = require('../lib/render');
 const pkg = require('../package.json');
 
 const HELP = `
   claudewrapped — your year in Claude Code, Spotify Wrapped style.
 
   Usage
-    npx claudewrapped [options]
+    ${CTA} [options]
 
   Options
     --year <yyyy>   Which year to wrap (default: this year)
