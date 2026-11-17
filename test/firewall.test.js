@@ -76,9 +76,17 @@ test('the public demo site is up to date and contains no real data', () => {
   assert.throws(() => render({ schema: 1 }, { hosted: true }), /never contain real stats/);
 });
 
-test('the advertised command is never the bare, unclaimed npm name', () => {
+test('the advertised command is the scoped package, everywhere', () => {
   const { CTA } = require('../lib/render');
-  const html = render(null);
-  assert.ok(html.includes(JSON.stringify(CTA)));
-  assert.ok(!/\bnpx claudewrapped\b/.test(html.replace(/\/\*__CTA__\*\//, '')), 'page hard-codes the npm name somewhere');
+  const pkg = require('../package.json');
+  assert.match(pkg.name, /^@willperacchio\//, 'package must stay scoped so nobody else can publish under its name');
+  assert.strictEqual(CTA, 'npx ' + pkg.name);
+  for (const html of [render(null), render(null, { hosted: true })]) {
+    assert.ok(html.includes(JSON.stringify(CTA)));
+    const other = html.match(/npx (?!@willperacchio\/claudewrapped)[\w:@/.-]*claudewrapped/);
+    assert.ok(!other, 'page advertises some other command: ' + (other && other[0]));
+  }
+  const readme = fs.readFileSync(path.join(__dirname, '..', 'README.md'), 'utf8');
+  const stray = readme.match(/npx (?!@willperacchio\/claudewrapped)\S*claudewrapped/);
+  assert.ok(!stray, 'README advertises some other command: ' + (stray && stray[0]));
 });

@@ -311,7 +311,7 @@ body{background:#0B0A0C;color:var(--paper);font-family:var(--sans);-webkit-font-
 <script>
 (() => {
 'use strict';
-const CTA = /*__CTA__*/'npx claudewrapped';   // the command we tell people to run
+const CTA = /*__CTA__*/'';   // the command we tell people to run (filled in by lib/render.js)
 const HOSTED = /*__HOSTED__*/false;           // true only for the public demo site
 // The public site refuses to run inside someone else's frame (clickjacking / spoofed wrappers).
 if (HOSTED && window.top !== window.self) {

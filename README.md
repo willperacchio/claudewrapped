@@ -3,7 +3,7 @@
 **Your year in Claude Code, Spotify Wrapped style.**
 
 ```bash
-npx github:willperacchio/claudewrapped
+npx @willperacchio/claudewrapped
 ```
 
 That's it. In about 10 seconds you get a story-mode recap of your year with Claude Code, plus a share card for your timeline.
@@ -44,7 +44,7 @@ Claude Wrapped is built so that **your data can't leak into the page, even by ac
 Don't trust us? Look at exactly what goes into the page:
 
 ```bash
-npx github:willperacchio/claudewrapped --json
+npx @willperacchio/claudewrapped --json
 ```
 
 ## Security

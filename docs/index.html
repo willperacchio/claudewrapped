@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-ndWDz2G13wSveFAhc9J3Zw3bz7GdJhY0d+x9c+qE0ds=' 'sha256-bfEorwAvBjWfsjAMxw2elhfyPPfBr2EzmWSvz7Xluq0='; style-src 'unsafe-inline'; img-src data: blob:; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-ndWDz2G13wSveFAhc9J3Zw3bz7GdJhY0d+x9c+qE0ds=' 'sha256-XU3qZvO6H3QLEwQVmxz8Y0zLjZLPebxHHJmG7wcRp58='; style-src 'unsafe-inline'; img-src data: blob:; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <title>Claude Wrapped</title>
@@ -319,7 +319,7 @@ body{background:#0B0A0C;color:var(--paper);font-family:var(--sans);-webkit-font-
 <script>
 (() => {
 'use strict';
-const CTA = "npx github:willperacchio/claudewrapped";   // the command we tell people to run
+const CTA = "npx @willperacchio/claudewrapped";   // the command we tell people to run (filled in by lib/render.js)
 const HOSTED = true;           // true only for the public demo site
 // The public site refuses to run inside someone else's frame (clickjacking / spoofed wrappers).
 if (HOSTED && window.top !== window.self) {

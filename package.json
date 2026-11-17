@@ -1,5 +1,5 @@
 {
-  "name": "claudewrapped",
+  "name": "@willperacchio/claudewrapped",
   "version": "0.1.0",
   "description": "Your year in Claude Code, Spotify Wrapped style. 100% local — nothing leaves your machine.",
   "bin": {
@@ -16,6 +16,9 @@
     "json": "node bin/claudewrapped.js --json",
     "test": "node --test test/firewall.test.js",
     "build:site": "node scripts/build-site.js"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "keywords": [
     "claude",
