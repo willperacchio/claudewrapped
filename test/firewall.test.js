@@ -90,3 +90,11 @@ test('the advertised command is the scoped package, everywhere', () => {
   const stray = readme.match(/npx (?!@willperacchio\/claudewrapped)\S*claudewrapped/);
   assert.ok(!stray, 'README advertises some other command: ' + (stray && stray[0]));
 });
+
+test('the landing page lists the real sixteen personalities and stays off the CLI page', () => {
+  const { ARCHETYPES } = require('../lib/personality');
+  const site = render(null, { hosted: true }), local = render(null);
+  for (const [id, a] of Object.entries(ARCHETYPES)) assert.ok(site.includes(`${id}:'${a.name}'`), `landing page is missing or misnames ${id}: ${a.name}`);
+  assert.ok(site.includes('const HOSTED = true') && local.includes('const HOSTED = false'), 'only the public site may build the landing page');
+  for (const href of site.match(/href="https?:[^"]+"/g) || []) assert.match(href, /^href="https:\/\/(github\.com\/willperacchio\/claudewrapped|willperacchio\.github\.io\/claudewrapped\/)/, 'unexpected external link ' + href);
+});

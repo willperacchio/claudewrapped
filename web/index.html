@@ -40,7 +40,7 @@ body{background:#0B0A0C;color:var(--paper);font-family:var(--sans);-webkit-font-
   background-image:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.5 0 0 0 -.6'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E"),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' seed='11' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 1.5 0 0 -.64'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E")}
-@media (max-width:560px){#story{width:100vw;height:100dvh;aspect-ratio:auto;border-radius:0}#keys{display:none}}
+@media (max-width:560px){body:not(.landing-mode) #story{width:100vw;height:100dvh;aspect-ratio:auto;border-radius:0}#keys{display:none}}
 @media (max-height:640px){#keys{display:none}}
 
 /* chrome */
@@ -286,7 +286,94 @@ body{background:#0B0A0C;color:var(--paper);font-family:var(--sans);-webkit-font-
   font:700 3.3cqw var(--sans);padding:2.8cqw 4.6cqw;border-radius:99px;transition:.4s var(--out);pointer-events:none;white-space:nowrap}
 .toast.on{transform:translate(-50%,0);opacity:1}
 
+
+/* ---------- landing page: public site only (HOSTED → body.landing-mode) ---------- */
+body.landing-mode{height:auto;overflow:visible;overflow-x:clip;background:var(--plum)}
+html:has(body.landing-mode){scroll-behavior:smooth;background:var(--plum)}
+body.landing-mode::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.28;background-size:240px 240px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.5 0 0 0 -.6'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E"),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' seed='11' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 1.5 0 0 -.64'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E")}
+body.landing-mode #glow{opacity:.2}
+.landing{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:0 44px;display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:88px;
+  --pw:min(372px,calc((100vh - 120px) * 9 / 16));--line:rgba(242,237,228,.17)}
+.lnav{grid-column:1/-1;grid-row:1;display:flex;align-items:center;justify-content:space-between;padding:26px 0;border-bottom:1.5px solid var(--line)}
+.lnav .brand{font:800 19px/1 var(--sans);letter-spacing:-.02em}
+.lnav .brand i{font:italic 400 22px/1 var(--serif);color:var(--lime);margin-left:2px}
+.lnav nav{display:flex;gap:28px;font:600 11.5px/1 var(--mono);letter-spacing:.15em;text-transform:uppercase}
+.lnav a,.lfoot a{color:inherit;text-decoration:none;opacity:.72;transition:opacity .2s}
+.lnav a:hover,.lfoot a:hover{opacity:1}
+.hero{grid-column:1;grid-row:2;min-height:calc(100vh - 80px);display:flex;flex-direction:column;justify-content:center;gap:28px;padding:56px 0}
+.lrest{grid-column:1;grid-row:3;min-width:0}
+.phonecol{grid-column:2;grid-row:2/4;position:sticky;top:calc(50vh - (var(--pw) * 16 / 9 + 22px) / 2 - 16px);align-self:start;
+  display:flex;flex-direction:column;align-items:center;gap:16px;padding:0 0 32px}
+.lfoot{grid-column:1/-1;grid-row:4;margin-top:56px;display:flex;justify-content:space-between;gap:16px 32px;flex-wrap:wrap;padding:30px 0 44px;
+  border-top:1.5px solid var(--line);font:500 12px/1.6 var(--mono);color:rgba(242,237,228,.6)}
+.lfoot nav{display:flex;gap:22px}
+.device{position:relative;width:calc(var(--pw) + 22px);padding:11px;border-radius:53px;background:#0B0A0C;
+  box-shadow:0 0 0 1.5px rgba(255,255,255,.13),0 0 0 7px #15101A,0 0 0 8.5px rgba(255,255,255,.06),0 60px 130px rgba(0,0,0,.62)}
+.device::before,.device::after{content:"";position:absolute;right:-9.5px;width:3px;border-radius:2px;background:#2B2531}
+.device::before{top:21%;height:66px}.device::after{top:33%;height:42px}
+.landing-mode #stage{position:relative;inset:auto;display:block}
+.landing-mode #story{width:var(--pw);border-radius:42px;box-shadow:none}
+.landing-mode #keys{display:none}
+.caption{font:600 10.5px/1.5 var(--mono);letter-spacing:.15em;text-transform:uppercase;color:rgba(242,237,228,.56);text-align:center}
+.l-label{font:600 12px/1.4 var(--mono);letter-spacing:.17em;text-transform:uppercase;color:var(--lime)}
+.hero h1{font:900 clamp(56px,6.8vw,100px)/.9 var(--sans);letter-spacing:-.06em}
+.hero h1 em,.lsec h2 em{font-family:var(--serif);font-style:italic;font-weight:400;color:var(--lime);letter-spacing:-.035em}
+.hero h1 em{font-size:1.07em}
+.lede{font:italic 400 clamp(19px,1.65vw,23px)/1.42 var(--serif);max-width:33em;color:rgba(242,237,228,.92);text-wrap:pretty}
+.cmd{display:flex;align-items:center;gap:12px;align-self:flex-start;max-width:100%;padding:7px 7px 7px 22px;border-radius:99px;
+  background:rgba(242,237,228,.05);box-shadow:inset 0 0 0 1.5px rgba(242,237,228,.3)}
+.cmd code{min-width:0;font:600 clamp(13px,1.3vw,16px)/1.2 var(--mono);color:var(--lime);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;user-select:all;-webkit-user-select:all}
+.cmd code::before{content:"$ ";color:rgba(242,237,228,.42);user-select:none;-webkit-user-select:none}
+.cmd button{appearance:none;border:0;cursor:pointer;flex:none;min-width:92px;background:var(--lime);color:var(--plum);font:800 15px/1 var(--sans);letter-spacing:-.01em;padding:14px 20px;border-radius:99px}
+.cmd button:hover{filter:brightness(.94)}
+.cmd button:focus-visible,.lnav a:focus-visible,.lfoot a:focus-visible,.textlink:focus-visible,.watch:focus-visible{outline:2px solid var(--lime);outline-offset:4px;border-radius:4px}
+.l-fine{font:500 12.5px/1.65 var(--mono);color:rgba(242,237,228,.62)}
+.watch{display:none;align-self:flex-start;color:var(--paper);font:600 12px/1 var(--mono);letter-spacing:.15em;text-transform:uppercase;text-decoration:none;border-bottom:1.5px solid currentColor;padding-bottom:4px}
+.lsec{padding:80px 0;border-top:1.5px solid var(--line)}
+.lsec h2{font:900 clamp(40px,4.4vw,62px)/.94 var(--sans);letter-spacing:-.055em;margin:14px 0 34px}
+.lsec .lede{margin:-14px 0 34px}
+.steps{list-style:none}
+.steps li{display:grid;grid-template-columns:78px 1fr;column-gap:20px;row-gap:6px;padding:24px 0;border-top:1.5px solid var(--line)}
+.steps li:first-child{border-top:0;padding-top:0}
+.steps b{grid-row:1/3;font:900 46px/.9 var(--sans);letter-spacing:-.06em;color:var(--lime)}
+.steps h3{font:800 25px/1.1 var(--sans);letter-spacing:-.035em}
+.steps p{font:italic 400 18.5px/1.45 var(--serif);color:rgba(242,237,228,.85);text-wrap:pretty}
+.marks{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.mark{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:10px 8px;border-radius:3px;position:relative}
+.mark svg{width:56%;flex:none}
+.mark span{font:750 12.5px/1.12 var(--sans);letter-spacing:-.015em;text-align:center}
+.mark span i{display:block;font:italic 400 11.5px/1 var(--serif);letter-spacing:0;opacity:.8;margin-bottom:2px}
+.facts{list-style:none}
+.facts li{padding:20px 0;border-top:1.5px solid var(--line);font:400 19px/1.5 var(--serif);color:rgba(242,237,228,.86);text-wrap:pretty}
+.facts li:first-child{border-top:0;padding-top:0}
+.facts li b{display:block;font:800 22px/1.15 var(--sans);letter-spacing:-.03em;color:var(--paper);margin-bottom:4px}
+.facts code{font:600 .82em var(--mono);color:var(--lime)}
+.links{display:flex;gap:26px;flex-wrap:wrap;margin-top:30px}
+.textlink{color:var(--lime);font:600 12.5px/1 var(--mono);letter-spacing:.13em;text-transform:uppercase;text-decoration:none;border-bottom:1.5px solid currentColor;padding-bottom:5px}
+.final{display:flex;flex-direction:column;gap:24px}
+.final h2{margin-bottom:6px}
+@media (max-width:980px){
+  .landing{grid-template-columns:minmax(0,1fr);padding:0 22px;--pw:min(82vw,350px,calc((100svh - 140px) * 9 / 16))}
+  .hero{min-height:0;padding:52px 0 40px;gap:24px}
+  .phonecol{grid-column:1;grid-row:3;position:relative;top:auto;padding:4px 0 64px;scroll-margin-top:24px}
+  .lrest{grid-row:4}
+  .lfoot{grid-row:5}
+  .watch{display:inline-block}
+  .lnav nav a:not(:last-child){display:none}
+  .lsec{padding:64px 0}
+}
+@media (max-width:520px){
+  .marks{gap:6px}
+  .mark{padding:6px 4px;gap:5px}.mark svg{width:52%}
+  .mark span{font-size:9.5px;letter-spacing:-.01em}.mark span i{font-size:9px}
+  .cmd{flex-direction:column;align-items:stretch;align-self:stretch;border-radius:22px;padding:16px;gap:14px}
+  .cmd code{white-space:normal;overflow:visible;overflow-wrap:anywhere;font-size:clamp(12px,3.7vw,15px);line-height:1.35}
+  .cmd button{width:100%;padding:15px}
+  .steps li{grid-template-columns:54px 1fr;column-gap:14px}.steps b{font-size:36px}
+}
+
 @media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto!important}
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;animation-delay:0s!important;transition:none!important}
 }
 </style>
@@ -549,7 +636,7 @@ function buildSlides(d) {
 
   // 0 · intro
   const range = d.range && !d.demo ? `Based on your local history · ${niceDate(d.range.from)} – ${niceDate(d.range.to)}` : '';
-  S.push({ id:'intro', name:CTA, dur:0, theme:th(P.plum, P.paper, P.lime), html:`
+  S.push({ id:'intro', name:CTA, dur:HOSTED ? 3800 : 0, theme:th(P.plum, P.paper, P.lime), html:`
     <div class="deco"><div class="ghost">${esc(YY)}</div></div>
     <div class="content">
       <div class="introtop">
@@ -841,7 +928,7 @@ function buildSlides(d) {
   {
     const sw = (key, [c, , k]) => `<button class="way" data-way="${key}" aria-label="${key} colorway" aria-pressed="false" style="--c:${c};--k:${k}"></button>`;
     const ways = [sw('auto', personaWay)].concat(Object.entries(WAYS).filter(([, w]) => w[0] !== personaWay[0]).map(([k, w]) => sw(k, w)));
-    S.push({ id:'share', name:'Share', dur:0, theme:th(P.ink, P.paper, P.lime), html:`
+    S.push({ id:'share', name:'Share', dur:HOSTED ? 12000 : 0, theme:th(P.ink, P.paper, P.lime), html:`
       <div class="content share">
         <div class="label rv">That’s a wrap</div>
         <div class="cardwrap zoom" ${dl(.15)}><img id="cardImg" alt="Your Claude Wrapped summary card"></div>
@@ -992,7 +1079,7 @@ const story = document.getElementById('story'), slot = document.getElementById('
 const pauseBtn = document.getElementById('pauseBtn'), toastEl = document.getElementById('toast');
 const folioL = document.getElementById('folioL'), folioR = document.getElementById('folioR');
 const SLIDES = buildSlides(D);
-let idx = 0, elapsed = 0, last = performance.now(), paused = false, holding = false, noAuto = false;
+let idx = 0, elapsed = 0, last = performance.now(), paused = false, holding = false, noAuto = false, offscreen = false;
 document.getElementById('demoChip').hidden = !D.demo;
 document.getElementById('brandYear').textContent = D.year === 'all' ? '' : '’' + YY;
 barsEl.innerHTML = SLIDES.slice(1).map(() => '<div class="bar"><i></i></div>').join('');
@@ -1049,7 +1136,7 @@ function show(i) {
   folioR.textContent = idx === 0 ? YEAR : `${pad2(idx)} / ${pad2(SLIDES.length - 1)}`;
   updateBars();
 }
-const next = () => { if (idx < SLIDES.length - 1) show(idx + 1); };
+const next = () => { if (idx < SLIDES.length - 1) show(idx + 1); else if (HOSTED) show(0); }; // the site loops
 const prev = () => show(idx <= 1 ? idx : idx - 1); // never back to the intro; slide 1 just restarts
 function updateBars() {
   const s = SLIDES[idx];
@@ -1061,7 +1148,7 @@ function updateBars() {
 function loop(now) {
   const dt = Math.min(100, now - last); last = now;
   const s = SLIDES[idx];
-  if (s.dur && !paused && !holding && !noAuto && !document.hidden) { elapsed += dt; if (elapsed >= s.dur) next(); }
+  if (s.dur && !paused && !holding && !noAuto && !offscreen && !document.hidden) { elapsed += dt; if (elapsed >= s.dur) next(); }
   updateBars();
   requestAnimationFrame(loop);
 }
@@ -1091,12 +1178,13 @@ pauseBtn.addEventListener('click', (e) => { e.stopPropagation(); setPaused(!paus
 document.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowRight') next();
   else if (e.key === 'ArrowLeft') prev();
-  else if (e.key === ' ' || e.key === 'k') { e.preventDefault(); if (idx === 0) next(); else setPaused(!paused); }
+  else if ((e.key === ' ' || e.key === 'k') && !HOSTED) { e.preventDefault(); if (idx === 0) next(); else setPaused(!paused); }
 });
 
 function toast(msg) { toastEl.textContent = msg; toastEl.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => toastEl.classList.remove('on'), 2400); }
 
 story.addEventListener('click', async (e) => {
+  elapsed = 0;
   const opt = e.target.closest('[data-opt]');
   if (opt) { opts[opt.dataset.opt] = opt.checked; paintCard(); return; }
   const way = e.target.closest('[data-way]');
@@ -1161,6 +1249,80 @@ function makeDemo() {
 }
 
 // #5 → open slide 5 without auto-advance (handy for screenshots)
+
+// ---------- landing page (public site only) ----------
+const REPO = 'https://github.com/willperacchio/claudewrapped';
+const PERSONA_NAMES = {
+  night:'The Night Shift', dawn:'The Sunrise Shipper', weekend:'The Weekend Warrior', polite:'The Diplomat',
+  rage:'The Rage Debugger', esc:'The Esc Artist', rubber:'The Rubber Stamp', novelist:'The Novelist',
+  haiku:'The Haiku Poet', bash:'The Shell Shocker', delegator:'The Middle Manager', marathon:'The Marathoner',
+  parallel:'The Octopus', visual:'The Screenshot Sommelier', surfer:'The Web Surfer', vibe:'The Vibe Coder',
+};
+function buildLanding() {
+  document.body.classList.add('landing-mode');
+  const stage = document.getElementById('stage');
+  const ext = (href, label, cls = '') => `<a${cls ? ` class="${cls}"` : ''} href="${href}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+  const cmd = `<div class="cmd"><code>${esc(CTA)}</code><button type="button" data-copy aria-label="Copy the command">Copy</button></div>`;
+  const marks = Object.keys(ARCH).map((id) => {
+    const [bg, fg, ac] = ARCH[id], name = PERSONA_NAMES[id].replace(/^The /, '');
+    return `<div class="mark" style="background:${bg};color:${fg}"><svg viewBox="0 0 200 200" aria-hidden="true"><circle cx="100" cy="100" r="80" fill="${ac}"/><g transform="translate(50 50)">${glyphSVG(id, onColor(ac, bg, fg))}</g></svg><span><i>The</i>${esc(name)}</span></div>`;
+  }).join('');
+  const wrap = document.createElement('div');
+  wrap.className = 'landing';
+  wrap.innerHTML = `
+    <header class="lnav"><span class="brand">Claude<i>Wrapped</i></span>
+      <nav><a href="#how">How it works</a><a href="#sixteen">Personalities</a><a href="#privacy">Privacy</a>${ext(REPO, 'GitHub ↗')}</nav></header>
+    <section class="hero">
+      <div class="l-label">Unofficial · for Claude Code · ${esc(YEAR)}</div>
+      <h1>Your year in<br>Claude Code,<br><em>wrapped.</em></h1>
+      <p class="lede">Minutes together, your top tools, your peak hour, how many times Claude told you “You’re absolutely right!”, and which of sixteen Claude personalities you are.</p>
+      ${cmd}
+      <p class="l-fine">Paste it into your terminal · Node 18+ · about ten seconds<br>Runs entirely on your computer. Nothing is uploaded.</p>
+      <a class="watch" href="#sample">Watch the sample ↓</a>
+    </section>
+    <aside class="phonecol" id="sample" aria-label="Sample Wrapped"><div class="device"></div><p class="caption">Sample data · tap the sides to skip · hold to pause</p></aside>
+    <div class="lrest">
+      <section class="lsec" id="how"><div class="l-label">How it works</div>
+        <h2>One command,<br><em>one year.</em></h2>
+        <ol class="steps">
+          <li><b>01</b><h3>Run it</h3><p>It reads the Claude Code history that’s already on your computer. No account, no sign-in, no upload.</p></li>
+          <li><b>02</b><h3>Watch it</h3><p>Fourteen slides about your hours, your habits, your tools and Claude’s catchphrases. Tap through it like a story.</p></li>
+          <li><b>03</b><h3>Share it</h3><p>Finish with a poster-sized card in six colorways. Save it, copy it, post it.</p></li>
+        </ol></section>
+      <section class="lsec" id="sixteen"><div class="l-label">The sixteen</div>
+        <h2>Which one<br>are <em>you?</em></h2>
+        <p class="lede">Picked from how you actually work: when you code, how you talk to Claude, and which tools you lean on.</p>
+        <div class="marks">${marks}</div></section>
+      <section class="lsec" id="privacy"><div class="l-label">Privacy</div>
+        <h2>Nothing leaves<br><em>your machine.</em></h2>
+        <ul class="facts">
+          <li><b>It runs locally.</b>It reads your history and writes one file. No servers, no accounts, no analytics.</li>
+          <li><b>Counts, never content.</b>Your prompts, code, file paths and project names never make it into the page or the card.</li>
+          <li><b>The page is locked down.</b>It can’t load anything or send anything anywhere. Your browser enforces that.</li>
+          <li><b>Check it yourself.</b>Add <code>--json</code> to the command to see every value that goes into your Wrapped.</li>
+        </ul>
+        <div class="links">${ext(REPO, 'Read the source ↗', 'textlink')}${ext(REPO + '/blob/main/SECURITY.md', 'Security policy ↗', 'textlink')}</div></section>
+      <section class="lsec final"><div class="l-label">Get yours</div>
+        <h2>Your year is<br>already <em>written.</em></h2>
+        ${cmd}
+        <p class="l-fine">Paste it into your terminal. Then tap through, and post your card.</p></section>
+    </div>
+    <footer class="lfoot"><span>Unofficial fan project. Not affiliated with Anthropic or Spotify.</span>
+      <nav>${ext(REPO, 'GitHub ↗')}${ext(REPO + '/blob/main/SECURITY.md', 'Security ↗')}</nav></footer>`;
+  document.body.insertBefore(wrap, stage);
+  wrap.querySelector('.device').appendChild(stage);
+  wrap.addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-copy]');
+    if (!b) return;
+    try { await navigator.clipboard.writeText(CTA); b.textContent = 'Copied ✓'; }
+    catch { b.textContent = 'Select it'; }
+    clearTimeout(b._t); b._t = setTimeout(() => { b.textContent = 'Copy'; }, 2200);
+  });
+  // only play while the phone is on screen
+  if ('IntersectionObserver' in window) new IntersectionObserver(([en]) => { offscreen = !en.isIntersecting; }, { threshold: .2 }).observe(story);
+}
+
+if (HOSTED) buildLanding();
 const jump = /^#(\d+)$/.exec(location.hash);
 noAuto = !!jump;
 setPaused(false);
