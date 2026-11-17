@@ -10,3 +10,6 @@ LAUNCH.md
 .DS_Store
 node_modules/
 *.tgz
+
+# npm auth tokens
+.npmrc
