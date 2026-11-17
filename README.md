@@ -35,6 +35,9 @@ Claude Wrapped is built so that **your data can't leak into the page, even by ac
 - Shell commands become a **verb from an allowlist** (`git`, `npm`, `grep`…). Arguments, script names and anything unknown are dropped.
 - Project names, session IDs, MCP server names and custom slash commands are **never** output. They're bucketed or counted instead.
 - Every string on the page comes from a fixed vocabulary in [`lib/catalog.js`](lib/catalog.js). Everything else is a number or a date.
+- That rule is enforced, not assumed: [`lib/guard.js`](lib/guard.js) rebuilds the output field by field and drops anything that isn't a finite number, a date, or a known label. `npm test` feeds it a hostile history to prove it.
+- The page ships a strict Content-Security-Policy: only its own two scripts (pinned by hash) can run, and the browser blocks every network request.
+- By default the page is written to a new temp folder that only your user can read.
 
 Don't trust us? Look at exactly what goes into the page:
 

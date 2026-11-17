@@ -13,7 +13,8 @@
   "scripts": {
     "start": "node bin/claudewrapped.js",
     "demo": "node bin/claudewrapped.js --demo",
-    "json": "node bin/claudewrapped.js --json"
+    "json": "node bin/claudewrapped.js --json",
+    "test": "node --test test/firewall.test.js"
   },
   "keywords": [
     "claude",

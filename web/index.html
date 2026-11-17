@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <title>Claude Wrapped</title>
@@ -362,7 +363,7 @@ const GLYPHS = {
   vibe: [['f','M44 20 C46 42 56 52 78 54 C56 56 46 66 44 88 C42 66 32 56 10 54 C32 52 42 42 44 20 Z'], ['f','M78 10 C79 19 82 22 91 23 C82 24 79 27 78 36 C77 27 74 24 65 23 C74 22 77 19 78 10 Z']],
 };
 function glyphSVG(id, color) {
-  return `<g fill="none" stroke="${color}" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round">` + (GLYPHS[id] || GLYPHS.vibe).map(([t, a, b, r, fs]) =>
+  return `<g fill="none" stroke="${color}" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round">` + (Object.hasOwn(GLYPHS, id) ? GLYPHS[id] : GLYPHS.vibe).map(([t, a, b, r, fs]) =>
     t === 's' ? `<path d="${a}"/>` : t === 'l' ? `<path d="${a}" stroke-width="3.6"/>` : t === 'f' ? `<path d="${a}" fill="${color}" stroke="none"/>` :
     t === 'c' ? `<circle cx="${a}" cy="${b}" r="${r}" fill="${color}" stroke="none"/>` : t === 'o' ? `<circle cx="${a}" cy="${b}" r="${r}"/>` :
     `<text x="${b}" y="${r}" font-size="${fs}" text-anchor="middle" fill="${color}" stroke="none" font-family="ui-monospace,Menlo,Consolas,monospace" font-weight="700">${a}</text>`).join('') + '</g>';
@@ -370,7 +371,7 @@ function glyphSVG(id, color) {
 function glyphCanvas(c, id, X, Y, s, color) {
   c.save(); c.translate(X, Y); c.scale(s, s); c.lineCap = 'round'; c.lineJoin = 'round'; c.strokeStyle = color; c.fillStyle = color;
   if ('letterSpacing' in c) c.letterSpacing = '0px';
-  for (const [t, a, b, r, fs] of GLYPHS[id] || GLYPHS.vibe) {
+  for (const [t, a, b, r, fs] of Object.hasOwn(GLYPHS, id) ? GLYPHS[id] : GLYPHS.vibe) {
     c.lineWidth = t === 'l' ? 3.6 : 6.5;
     if (t === 's' || t === 'l') c.stroke(new Path2D(a));
     else if (t === 'f') c.fill(new Path2D(a));
@@ -442,8 +443,8 @@ const ARCH = {
 };
 const WAYS = { ink:[P.ink,P.paper,P.lime], paper:[P.paper,P.ink,P.clay], cobalt:[P.cobalt,P.paper,P.butter], pink:[P.pink,P.ink,P.plum], forest:[P.forest,P.paper,P.lime] };
 const previewId = new URLSearchParams(location.search).get('p'); // ?p=night previews another mark + colourway
-const persona = { ...(D.personality || { id:'vibe', name:'The Vibe Coder', emoji:'✨', tagline:'You came. You prompted. You vibed.', traits:[] }), ...(ARCH[previewId] ? { id: previewId } : {}) };
-const personaWay = ARCH[persona.id] || ARCH.vibe;
+const persona = { ...(D.personality || { id:'vibe', name:'The Vibe Coder', emoji:'✨', tagline:'You came. You prompted. You vibed.', traits:[] }), ...(previewId && Object.hasOwn(ARCH, previewId) ? { id: previewId } : {}) };
+const personaWay = Object.hasOwn(ARCH, persona.id) ? ARCH[persona.id] : ARCH.vibe;
 // "The Night Shift" → article set small in serif, the rest set big (one or two lines)
 function nameLines(name) {
   const rest = name.replace(/^The\s+/i, '');
@@ -554,7 +555,7 @@ function buildSlides(d) {
   {
     const yrPct = T.minutes / 525600 * 100, fullDays = T.minutes / 1440;
     const meta = [[fmt(T.sessions), pl(T.sessions, 'session')], [fmt(T.projects), pl(T.projects, 'project')], [fmt(T.activeDays), pl(T.activeDays, 'day') + ' active']];
-    if (tm.maxParallel >= 3) meta.push([tm.maxParallel, 'Claudes at once']);
+    if (tm.maxParallel >= 3) meta.push([fmt(tm.maxParallel), 'Claudes at once']);
     S.push({ id:'minutes', name:'Time together', dur:7500, theme:th(P.lime, P.ink, P.ink), html:`
       <div class="content">
         <div class="label rv">Minutes together</div>
@@ -862,7 +863,7 @@ function grainOn(x, W, H) {
 function drawCard(d) {
   const W = 1080, H = 1350, M = 72, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
   const x = cv.getContext('2d'), p = persona;
-  const [bg, fg, ac] = WAYS[opts.way] || personaWay, on = onColor(ac, bg, fg);
+  const [bg, fg, ac] = Object.hasOwn(WAYS, opts.way) ? WAYS[opts.way] : personaWay, on = onColor(ac, bg, fg);
   const F = (w, s, f = SANS, st = '') => { x.font = `${st} ${w} ${s}px ${f}`.trim(); };
   const sp = (px) => { if ('letterSpacing' in x) x.letterSpacing = px; };
   const fit = (t, maxW, s, min, w = 900, f = SANS) => { for (; s > min; s -= 2) { F(w, s, f); if (x.measureText(t).width <= maxW) return s; } F(w, min, f); return min; };

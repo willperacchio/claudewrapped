@@ -68,9 +68,22 @@ function banner() {
   console.log('');
 }
 
+// Default output: a fresh directory only you can read (0700), and a file created 0600 that refuses to
+// follow a pre-existing path. A fixed name in the shared temp dir would be readable — and plantable — by other users.
+function privateTempFile(name) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'claudewrapped-'));
+  return path.join(dir, name);
+}
+function writePage(file, html, isPrivate) {
+  if (isPrivate) fs.writeFileSync(file, html, { mode: 0o600, flag: 'wx' });
+  else { fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, html); }
+}
+
 function openFile(file) {
   const p = process.platform;
-  const [cmd, args] = p === 'darwin' ? ['open', [file]] : p === 'win32' ? ['cmd', ['/c', 'start', '""', file]] : ['xdg-open', [file]];
+  // Arguments are passed as an array, never through a shell. On Windows explorer.exe opens the default
+  // handler without cmd.exe parsing the path.
+  const [cmd, args] = p === 'darwin' ? ['open', [file]] : p === 'win32' ? ['explorer.exe', [file]] : ['xdg-open', [file]];
   try {
     const child = spawn(cmd, args, { stdio: 'ignore', detached: true });
     child.on('error', () => {});
@@ -86,8 +99,8 @@ async function main() {
 
   if (o.demo) {
     if (o.json) fail('--demo and --json together? The sample data lives in web/index.html.');
-    const out = path.resolve(o.out || path.join(os.tmpdir(), 'claude-wrapped-demo.html'));
-    fs.writeFileSync(out, render(null));
+    const out = o.out ? path.resolve(o.out) : privateTempFile('claude-wrapped-demo.html');
+    writePage(out, render(null), !o.out);
     console.log(`  Sample Wrapped → ${out}\n`);
     if (o.open) openFile(out);
     return;
@@ -117,9 +130,8 @@ async function main() {
 
   if (o.json) return void process.stdout.write(JSON.stringify(stats, null, 2) + '\n');
 
-  const out = path.resolve(o.out || path.join(os.tmpdir(), `claude-wrapped-${stats.year}.html`));
-  fs.mkdirSync(path.dirname(out), { recursive: true });
-  fs.writeFileSync(out, render(stats));
+  const out = o.out ? path.resolve(o.out) : privateTempFile(`claude-wrapped-${stats.year}.html`);
+  writePage(out, render(stats), !o.out);
 
   const p = stats.personality;
   const topTool = stats.tools[0] ? stats.tools[0].name : '—';
