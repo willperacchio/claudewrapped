@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-ndWDz2G13wSveFAhc9J3Zw3bz7GdJhY0d+x9c+qE0ds=' 'sha256-9eJAY03SMUU4c9JMJpucRB3DWxtGO1FDCPNwqFIA5Zg='; style-src 'unsafe-inline'; img-src data: blob:; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-ndWDz2G13wSveFAhc9J3Zw3bz7GdJhY0d+x9c+qE0ds=' 'sha256-uJ64LCagIwqDJL1PhAt5F/3gGo+bL0anjoUFSL4SBEk='; style-src 'unsafe-inline'; img-src data: blob:; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <title>Claude Wrapped</title>
@@ -128,6 +128,9 @@ body{background:#0B0A0C;color:var(--paper);font-family:var(--sans);-webkit-font-
   padding:4cqw 6.4cqw;border-radius:99px;align-self:flex-start;display:inline-flex;gap:2cqw;align-items:center}
 .cta span{transition:transform .25s var(--out)}
 .cta:hover span{transform:translateX(1.2cqw)}
+.cta{position:relative}
+.cta::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;animation:ping 2.8s var(--out) 1.6s infinite}
+@keyframes ping{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--a1) 60%,transparent)}75%,100%{box-shadow:0 0 0 3.4cqw color-mix(in srgb,var(--a1) 0%,transparent)}}
 .cta:active{filter:brightness(.92)}
 
 /* 1 minutes */
@@ -644,7 +647,7 @@ function buildSlides(d) {
 
   // 0 · intro
   const range = d.range && !d.demo ? `Based on your local history · ${niceDate(d.range.from)} – ${niceDate(d.range.to)}` : '';
-  S.push({ id:'intro', name:CTA, dur:HOSTED ? 3800 : 0, theme:th(P.plum, P.paper, P.lime), html:`
+  S.push({ id:'intro', name:CTA, dur:0, theme:th(P.plum, P.paper, P.lime), html:`
     <div class="deco"><div class="ghost">${esc(YY)}</div></div>
     <div class="content">
       <div class="introtop">
@@ -936,7 +939,7 @@ function buildSlides(d) {
   {
     const sw = (key, [c, , k]) => `<button class="way" data-way="${key}" aria-label="${key} colorway" aria-pressed="false" style="--c:${c};--k:${k}"></button>`;
     const ways = [sw('auto', personaWay)].concat(Object.entries(WAYS).filter(([, w]) => w[0] !== personaWay[0]).map(([k, w]) => sw(k, w)));
-    S.push({ id:'share', name:'Share', dur:HOSTED ? 12000 : 0, theme:th(P.ink, P.paper, P.lime), html:`
+    S.push({ id:'share', name:'Share', dur:0, theme:th(P.ink, P.paper, P.lime), html:`
       <div class="content share">
         <div class="label rv">That’s a wrap</div>
         <div class="cardwrap zoom" ${dl(.15)}><img id="cardImg" alt="Your Claude Wrapped summary card"></div>
@@ -1288,7 +1291,7 @@ function buildLanding() {
       <p class="l-fine">Paste it into your terminal · Node 18+ · about ten seconds<br>Runs entirely on your computer. Nothing is uploaded.</p>
       <a class="watch" href="#sample">Watch the sample ↓</a>
     </section>
-    <aside class="phonecol" id="sample" aria-label="Sample Wrapped"><div class="device"></div><p class="caption">Sample data · tap the sides to skip · hold to pause</p></aside>
+    <aside class="phonecol" id="sample" aria-label="Sample Wrapped"><div class="device"></div><p class="caption">Sample data · tap Unwrap it to play · tap the sides to skip</p></aside>
     <div class="lrest">
       <section class="lsec" id="how"><div class="l-label">How it works</div>
         <h2>One command,<br><em>one year.</em></h2>
